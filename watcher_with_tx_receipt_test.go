@@ -1,11 +1,11 @@
-package ethereum_watcher
+package ethwatcher
 
 import (
 	"context"
 	"fmt"
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/plugin"
-	"github.com/rakshasa/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/structs"
 	"github.com/labstack/gommon/log"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"

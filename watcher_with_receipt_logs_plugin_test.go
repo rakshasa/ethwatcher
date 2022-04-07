@@ -1,10 +1,10 @@
-package ethereum_watcher
+package ethwatcher
 
 import (
 	"context"
 	"fmt"
-	"github.com/rakshasa/ethereum-watcher/plugin"
-	"github.com/rakshasa/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/structs"
 	"github.com/sirupsen/logrus"
 	"testing"
 )

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"github.com/rakshasa/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/structs"
 )
 
 type IBlockPlugin interface {

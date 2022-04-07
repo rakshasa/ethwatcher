@@ -1,4 +1,4 @@
-package ethereum_watcher
+package ethwatcher
 
 import (
 	"container/list"
@@ -8,18 +8,17 @@ import (
 	"time"
 
 	"github.com/onrik/ethrpc"
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/plugin"
-	"github.com/rakshasa/ethereum-watcher/rpc"
-	"github.com/rakshasa/ethereum-watcher/structs"
-	"github.com/rakshasa/ethereum-watcher/utils"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/rpc"
+	"github.com/rakshasa/ethwatcher/structs"
+	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/sirupsen/logrus"
 )
 
 type AbstractWatcher struct {
 	rpc rpc.IBlockChainRPC
 
-	Ctx  context.Context
 	lock sync.RWMutex
 
 	NewBlockChan        chan *structs.RemovableBlock
@@ -41,11 +40,10 @@ type AbstractWatcher struct {
 	wg                      sync.WaitGroup
 }
 
-func NewHttpBasedEthWatcher(ctx context.Context, api string, options ...func(rpc *ethrpc.EthRPC)) *AbstractWatcher {
+func NewHttpBasedEthWatcher(api string, options ...func(rpc *ethrpc.EthRPC)) *AbstractWatcher {
 	rpc := rpc.NewEthRPCWithRetry(api, 5, options...)
 
 	return &AbstractWatcher{
-		Ctx:                     ctx,
 		rpc:                     rpc,
 		NewBlockChan:            make(chan *structs.RemovableBlock, 32),
 		NewTxAndReceiptChan:     make(chan *structs.RemovableTxAndReceipt, 518),
@@ -75,13 +73,13 @@ func (watcher *AbstractWatcher) RegisterReceiptLogPlugin(plugin plugin.IReceiptL
 }
 
 // start sync from latest block
-func (watcher *AbstractWatcher) RunTillExit() error {
-	return watcher.RunTillExitFromBlock(0)
+func (watcher *AbstractWatcher) RunTillExit(ctx context.Context) error {
+	return watcher.RunTillExitFromBlock(ctx, 0)
 }
 
 // start sync from given block
 // 0 means start from latest block
-func (watcher *AbstractWatcher) RunTillExitFromBlock(startBlockNum uint64) error {
+func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startBlockNum uint64) error {
 	if startBlockNum == 0 {
 		utils.Debugf("ethereum watcher is running until exit from latest block")
 	} else {
@@ -188,7 +186,7 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(startBlockNum uint64) error
 
 			// sleep for 3 secs
 			select {
-			case <-watcher.Ctx.Done():
+			case <-ctx.Done():
 				closeWatcher(watcher)
 				return nil
 			case <-time.After(time.Duration(watcher.sleepSecondsForNewBlock) * time.Second):
@@ -198,7 +196,7 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(startBlockNum uint64) error
 
 		for watcher.LatestSyncedBlockNum() < latestBlockNum {
 			select {
-			case <-watcher.Ctx.Done():
+			case <-ctx.Done():
 				logrus.Info("watcher context down, closing channels to exit...")
 				closeWatcher(watcher)
 				logrus.Info("watcher done!")

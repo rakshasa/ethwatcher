@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/rakshasa/ethereum-watcher"
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/plugin"
-	"github.com/rakshasa/ethereum-watcher/rpc"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+
+	"github.com/rakshasa/ethwatcher"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/rpc"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -39,20 +40,20 @@ func main() {
 }
 
 var rootCMD = &cobra.Command{
-	Use:   "ethereum-watcher",
-	Short: "ethereum-watcher makes getting updates from Ethereum easier",
+	Use:   "ethwatcher",
+	Short: "ethwatcher makes getting updates from Ethereum easier",
 }
 
 var blockNumCMD = &cobra.Command{
 	Use:   "new-block-number",
 	Short: "Print number of new block",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(cmd.Context())
 
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 
-		w := ethereum_watcher.NewHttpBasedEthWatcher(ctx, api)
+		w := ethwatcher.NewHttpBasedEthWatcher(api)
 
 		logrus.Println("waiting for new block...")
 		w.RegisterBlockPlugin(plugin.NewBlockNumPlugin(func(i uint64, b bool) {
@@ -64,12 +65,12 @@ var blockNumCMD = &cobra.Command{
 			cancel()
 		}()
 
-		err := w.RunTillExit()
-		if err != nil {
+		if err := w.RunTillExit(ctx); err != nil {
 			logrus.Printf("exit with err: %s", err)
-		} else {
-			logrus.Infoln("exit")
+			return
 		}
+
+		logrus.Infoln("exit")
 	},
 }
 
@@ -99,14 +100,13 @@ var usdtTransferCMD = &cobra.Command{
 			return nil
 		}
 
-		receiptLogWatcher := ethereum_watcher.NewReceiptLogWatcher(
-			context.TODO(),
+		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
 			-1,
 			usdtContractAdx,
 			topicsInterestedIn,
 			handler,
-			ethereum_watcher.ReceiptLogWatcherConfig{
+			ethwatcher.ReceiptLogWatcherConfig{
 				StepSizeForBigLag:               5,
 				IntervalForPollingNewBlockInSec: 5,
 				RPCMaxRetry:                     3,
@@ -114,7 +114,7 @@ var usdtTransferCMD = &cobra.Command{
 			},
 		)
 
-		receiptLogWatcher.Run()
+		receiptLogWatcher.Run(cmd.Context())
 	},
 }
 
@@ -124,7 +124,7 @@ var contractEventListenerCMD = &cobra.Command{
 	Example: `
   listen to Transfer & Approve events from Multi-Collateral-DAI
   
-  /bin/ethereum-watcher contract-event-listener \
+  /bin/ethwatcher contract-event-listener \
     --block-backoff 100
     --contract 0x6b175474e89094c44da98b954eedeac495271d0f \
     --events 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef`,
@@ -161,14 +161,13 @@ var contractEventListenerCMD = &cobra.Command{
 			}
 		}
 
-		receiptLogWatcher := ethereum_watcher.NewReceiptLogWatcher(
-			context.TODO(),
+		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
 			startBlockNum,
 			contractAdx,
 			eventSigs,
 			handler,
-			ethereum_watcher.ReceiptLogWatcherConfig{
+			ethwatcher.ReceiptLogWatcherConfig{
 				StepSizeForBigLag:               5,
 				IntervalForPollingNewBlockInSec: 5,
 				RPCMaxRetry:                     3,
@@ -176,6 +175,6 @@ var contractEventListenerCMD = &cobra.Command{
 			},
 		)
 
-		receiptLogWatcher.Run()
+		receiptLogWatcher.Run(cmd.Context())
 	},
 }

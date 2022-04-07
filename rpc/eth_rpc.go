@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/onrik/ethrpc"
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/utils"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/sirupsen/logrus"
 )
 

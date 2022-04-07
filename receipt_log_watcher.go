@@ -1,4 +1,4 @@
-package ethereum_watcher
+package ethwatcher
 
 import (
 	"context"
@@ -6,13 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/rpc"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/rpc"
 	"github.com/sirupsen/logrus"
 )
 
 type ReceiptLogWatcher struct {
-	ctx                   context.Context
 	api                   string
 	startBlockNum         int
 	contract              string
@@ -24,7 +23,6 @@ type ReceiptLogWatcher struct {
 }
 
 func NewReceiptLogWatcher(
-	ctx context.Context,
 	api string,
 	startBlockNum int,
 	contract string,
@@ -38,7 +36,6 @@ func NewReceiptLogWatcher(
 	pseudoSyncedLogIndex := config.StartSyncAfterLogIndex - 1
 
 	return &ReceiptLogWatcher{
-		ctx:                   ctx,
 		api:                   api,
 		startBlockNum:         startBlockNum,
 		contract:              contract,
@@ -91,7 +88,7 @@ var defaultConfig = ReceiptLogWatcherConfig{
 	StartSyncAfterLogIndex:          0,
 }
 
-func (w *ReceiptLogWatcher) Run() error {
+func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 	var blockNumToBeProcessedNext = w.startBlockNum
 
@@ -99,7 +96,7 @@ func (w *ReceiptLogWatcher) Run() error {
 
 	for {
 		select {
-		case <-w.ctx.Done():
+		case <-ctx.Done():
 			return nil
 		default:
 			highestBlock, err := rpc.GetCurrentBlockNum()
@@ -123,7 +120,7 @@ func (w *ReceiptLogWatcher) Run() error {
 				select {
 				case <-time.After(time.Duration(sleepSec) * time.Second):
 					continue
-				case <-w.ctx.Done():
+				case <-ctx.Done():
 					return nil
 				}
 			}
@@ -149,7 +146,7 @@ func (w *ReceiptLogWatcher) Run() error {
 					err := w.handler(blockNumToBeProcessedNext, to, nil, isUpToHighestBlock)
 					if err != nil {
 						logrus.Infof("err when handling nil receipt log, block range: %d - %d", blockNumToBeProcessedNext, to)
-						return fmt.Errorf("ethereum_watcher handler(nil) returns error: %s", err)
+						return fmt.Errorf("ethwatcher handler(nil) returns error: %s", err)
 					}
 				}
 			} else {
@@ -160,7 +157,7 @@ func (w *ReceiptLogWatcher) Run() error {
 						blockNumToBeProcessedNext, to, logs,
 					)
 
-					return fmt.Errorf("ethereum_watcher handler returns error: %s", err)
+					return fmt.Errorf("ethwatcher handler returns error: %s", err)
 				}
 			}
 

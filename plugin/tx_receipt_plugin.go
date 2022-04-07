@@ -3,8 +3,8 @@ package plugin
 import (
 	"math/big"
 
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/rakshasa/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/blockchain"
+	"github.com/rakshasa/ethwatcher/structs"
 	"github.com/shopspring/decimal"
 )
 

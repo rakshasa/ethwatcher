@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/rakshasa/ethereum-watcher/blockchain"
+	"github.com/rakshasa/ethwatcher/blockchain"
 )
 
 type IBlockChainRPC interface {
