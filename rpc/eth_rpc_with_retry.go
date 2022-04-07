@@ -1,8 +1,10 @@
 package rpc
 
 import (
-	"github.com/rakshasa/ethereum-watcher/blockchain"
 	"time"
+
+	"github.com/onrik/ethrpc"
+	"github.com/rakshasa/ethereum-watcher/blockchain"
 )
 
 type EthBlockChainRPCWithRetry struct {
@@ -10,8 +12,8 @@ type EthBlockChainRPCWithRetry struct {
 	maxRetryTimes int
 }
 
-func NewEthRPCWithRetry(api string, maxRetryCount int) *EthBlockChainRPCWithRetry {
-	rpc := NewEthRPC(api)
+func NewEthRPCWithRetry(api string, maxRetryCount int, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPCWithRetry {
+	rpc := NewEthRPC(api, options...)
 
 	return &EthBlockChainRPCWithRetry{rpc, maxRetryCount}
 }
@@ -69,11 +71,11 @@ func (rpc EthBlockChainRPCWithRetry) GetCurrentBlockNum() (rst uint64, err error
 }
 func (rpc EthBlockChainRPCWithRetry) GetLogs(
 	fromBlockNum, toBlockNum uint64,
-	address string,
+	addresses []string,
 	topics []string,
 ) (rst []blockchain.IReceiptLog, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetLogs(fromBlockNum, toBlockNum, address, topics)
+		rst, err = rpc.EthBlockChainRPC.GetLogs(fromBlockNum, toBlockNum, addresses, topics)
 		if err == nil {
 			break
 		} else {

@@ -2,18 +2,20 @@ package rpc
 
 import (
 	"errors"
-	"github.com/rakshasa/ethereum-watcher/blockchain"
-	"github.com/onrik/ethrpc"
-	"github.com/sirupsen/logrus"
 	"strconv"
+
+	"github.com/onrik/ethrpc"
+	"github.com/rakshasa/ethereum-watcher/blockchain"
+	"github.com/rakshasa/ethereum-watcher/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type EthBlockChainRPC struct {
 	rpcImpl *ethrpc.EthRPC
 }
 
-func NewEthRPC(api string) *EthBlockChainRPC {
-	rpc := ethrpc.New(api)
+func NewEthRPC(api string, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPC {
+	rpc := ethrpc.New(api, options...)
 
 	return &EthBlockChainRPC{rpc}
 }
@@ -57,32 +59,31 @@ func (rpc EthBlockChainRPC) GetCurrentBlockNum() (uint64, error) {
 
 func (rpc EthBlockChainRPC) GetLogs(
 	fromBlockNum, toBlockNum uint64,
-	address string,
+	addresses []string,
 	topics []string,
 ) ([]blockchain.IReceiptLog, error) {
 
 	filterParam := ethrpc.FilterParams{
 		FromBlock: "0x" + strconv.FormatUint(fromBlockNum, 16),
 		ToBlock:   "0x" + strconv.FormatUint(toBlockNum, 16),
-		Address:   []string{address},
+		Address:   addresses,
 		Topics:    [][]string{topics},
 	}
 
 	logs, err := rpc.rpcImpl.EthGetLogs(filterParam)
 	if err != nil {
-		logrus.Warnf("EthGetLogs err: %s, params: %+v", err, filterParam)
+		utils.Warnf("eth_getlogs: failed to retrieve logs: %v", err)
 		return nil, err
 	}
 
-	logrus.Debugf("EthGetLogs logs count at block(%d - %d): %d", fromBlockNum, toBlockNum, len(logs))
+	logrus.Tracef("eth_getlogs: log count at block(%d - %d): %d", fromBlockNum, toBlockNum, len(logs))
 
 	var result []blockchain.IReceiptLog
 	for i := 0; i < len(logs); i++ {
 		l := logs[i]
-
-		logrus.Debugf("EthGetLogs receipt log: %+v", l)
-
 		result = append(result, blockchain.ReceiptLog{Log: &l})
+
+		logrus.Tracef("eth_getlogs: receipt log: %+v", l)
 	}
 
 	return result, err
