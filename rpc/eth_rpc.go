@@ -7,7 +7,6 @@ import (
 	"github.com/onrik/ethrpc"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/utils"
-	"github.com/sirupsen/logrus"
 )
 
 type EthBlockChainRPC struct {
@@ -76,14 +75,14 @@ func (rpc EthBlockChainRPC) GetLogs(
 		return nil, err
 	}
 
-	logrus.Tracef("eth_getlogs: log count at block(%d - %d): %d", fromBlockNum, toBlockNum, len(logs))
+	utils.Tracef("eth_getlogs: log count at block(%d - %d): %d", fromBlockNum, toBlockNum, len(logs))
 
 	var result []blockchain.IReceiptLog
 	for i := 0; i < len(logs); i++ {
 		l := logs[i]
 		result = append(result, blockchain.ReceiptLog{Log: &l})
 
-		logrus.Tracef("eth_getlogs: receipt log: %+v", l)
+		utils.Tracef("eth_getlogs: receipt log: %+v", l)
 	}
 
 	return result, err

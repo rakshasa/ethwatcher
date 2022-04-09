@@ -13,7 +13,6 @@ import (
 	"github.com/rakshasa/ethwatcher/rpc"
 	"github.com/rakshasa/ethwatcher/structs"
 	"github.com/rakshasa/ethwatcher/utils"
-	"github.com/sirupsen/logrus"
 )
 
 type AbstractWatcher struct {
@@ -197,9 +196,9 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 		for watcher.LatestSyncedBlockNum() < latestBlockNum {
 			select {
 			case <-ctx.Done():
-				logrus.Info("watcher context down, closing channels to exit...")
+				utils.Infof("watcher context down, closing channels to exit...")
 				closeWatcher(watcher)
-				logrus.Info("watcher done!")
+				utils.Infof("watcher done!")
 
 				return nil
 			default:
@@ -532,12 +531,12 @@ func (watcher *AbstractWatcher) FoundFork(newBlock blockchain.Block) bool {
 		syncedBlock := e.Value.(blockchain.Block)
 
 		//if syncedBlock == nil {
-		//	logrus.Warnln("error, syncedBlock is nil")
+		//	utils.Warnln("error, syncedBlock is nil")
 		//}
 		//utils.Debugf("syncedBlock: %+v", syncedBlock)
 
 		//if newBlock == nil {
-		//	logrus.Warnln("error, newBlock is nil")
+		//	utils.Warnln("error, newBlock is nil")
 		//}
 		//utils.Debugf("newBlock: %+v", newBlock)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/plugin"
 	"github.com/rakshasa/ethwatcher/rpc"
-	"github.com/sirupsen/logrus"
+	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -55,9 +55,9 @@ var blockNumCMD = &cobra.Command{
 
 		w := ethwatcher.NewHttpBasedEthWatcher(api)
 
-		logrus.Println("waiting for new block...")
+		utils.Printf("waiting for new block...")
 		w.RegisterBlockPlugin(plugin.NewBlockNumPlugin(func(i uint64, b bool) {
-			logrus.Printf(">> found new block: %d, is removed: %t", i, b)
+			utils.Printf(">> found new block: %d, is removed: %t", i, b)
 		}))
 
 		go func() {
@@ -66,11 +66,11 @@ var blockNumCMD = &cobra.Command{
 		}()
 
 		if err := w.RunTillExit(ctx); err != nil {
-			logrus.Printf("exit with err: %s", err)
+			utils.Printf("exit with err: %s", err)
 			return
 		}
 
-		logrus.Infoln("exit")
+		utils.Infof("exit")
 	},
 }
 
@@ -86,13 +86,13 @@ var usdtTransferCMD = &cobra.Command{
 		handler := func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error {
 
 			if from != to {
-				logrus.Infof("See new USDT Transfer at blockRange: %d -> %d, count: %2d", from, to, len(receiptLogs))
+				utils.Infof("See new USDT Transfer at blockRange: %d -> %d, count: %2d", from, to, len(receiptLogs))
 			} else {
-				logrus.Infof("See new USDT Transfer at block: %d, count: %2d", from, len(receiptLogs))
+				utils.Infof("See new USDT Transfer at block: %d, count: %2d", from, len(receiptLogs))
 			}
 
 			for _, log := range receiptLogs {
-				logrus.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
+				utils.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
 			}
 
 			fmt.Println("  ")
@@ -133,13 +133,13 @@ var contractEventListenerCMD = &cobra.Command{
 		handler := func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error {
 
 			if from != to {
-				logrus.Infof("# of interested events at block(%d->%d): %d", from, to, len(receiptLogs))
+				utils.Infof("# of interested events at block(%d->%d): %d", from, to, len(receiptLogs))
 			} else {
-				logrus.Infof("# of interested events at block(%d): %d", from, len(receiptLogs))
+				utils.Infof("# of interested events at block(%d): %d", from, len(receiptLogs))
 			}
 
 			for _, log := range receiptLogs {
-				logrus.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
+				utils.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
 			}
 
 			fmt.Println("  ")
@@ -155,7 +155,7 @@ var contractEventListenerCMD = &cobra.Command{
 				startBlockNum = int(curBlockNum) - blockBackoff
 
 				if startBlockNum > 0 {
-					logrus.Infof("--block-backoff activated, we start from block: %d (= %d - %d)",
+					utils.Infof("--block-backoff activated, we start from block: %d (= %d - %d)",
 						startBlockNum, curBlockNum, blockBackoff)
 				}
 			}

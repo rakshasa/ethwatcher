@@ -35,6 +35,12 @@ func SetCategoryLogLevel(l logrus.Level) {
 	logLevel = l
 }
 
+func Printf(format string, v ...interface{}) {
+	if logLevel <= logrus.InfoLevel {
+		logrus.Infof(logPrefix+format, v...)
+	}
+}
+
 func Debugf(format string, v ...interface{}) {
 	if logLevel <= logrus.DebugLevel {
 		logrus.Debugf(logPrefix+format, v...)

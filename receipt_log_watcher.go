@@ -8,7 +8,7 @@ import (
 
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/rpc"
-	"github.com/sirupsen/logrus"
+	"github.com/rakshasa/ethwatcher/utils"
 )
 
 type ReceiptLogWatcher struct {
@@ -115,7 +115,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 			if numOfBlocksToProcess <= 0 {
 				sleepSec := w.config.IntervalForPollingNewBlockInSec
 
-				logrus.Debugf("no ready block after %d(lag: %d), sleep %d seconds", highestBlockCanProcess, w.config.LagToHighestBlock, sleepSec)
+				utils.Debugf("no ready block after %d(lag: %d), sleep %d seconds", highestBlockCanProcess, w.config.LagToHighestBlock, sleepSec)
 
 				select {
 				case <-time.After(time.Duration(sleepSec) * time.Second):
@@ -145,7 +145,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				if w.config.ReturnForBlockWithNoReceiptLog {
 					err := w.handler(blockNumToBeProcessedNext, to, nil, isUpToHighestBlock)
 					if err != nil {
-						logrus.Infof("err when handling nil receipt log, block range: %d - %d", blockNumToBeProcessedNext, to)
+						utils.Infof("err when handling nil receipt log, block range: %d - %d", blockNumToBeProcessedNext, to)
 						return fmt.Errorf("ethwatcher handler(nil) returns error: %s", err)
 					}
 				}
@@ -153,7 +153,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 				err := w.handler(blockNumToBeProcessedNext, to, logs, isUpToHighestBlock)
 				if err != nil {
-					logrus.Infof("err when handling receipt log, block range: %d - %d, receipt logs: %+v",
+					utils.Infof("err when handling receipt log, block range: %d - %d, receipt logs: %+v",
 						blockNumToBeProcessedNext, to, logs,
 					)
 

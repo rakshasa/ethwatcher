@@ -3,13 +3,14 @@ package ethwatcher
 import (
 	"context"
 	"fmt"
+	"testing"
+
+	"github.com/labstack/gommon/log"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/plugin"
 	"github.com/rakshasa/ethwatcher/structs"
-	"github.com/labstack/gommon/log"
+	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
-	"testing"
 )
 
 // todo why some tx index in block is zero?
@@ -17,7 +18,7 @@ func TestTxReceiptPlugin(t *testing.T) {
 	log.SetLevel(log.DEBUG)
 
 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(context.Background(), api)
+	w := NewHttpBasedEthWatcher(api)
 
 	w.RegisterTxReceiptPlugin(plugin.NewTxReceiptPlugin(func(txAndReceipt *structs.RemovableTxAndReceipt) {
 		if txAndReceipt.IsRemoved {
@@ -27,28 +28,28 @@ func TestTxReceiptPlugin(t *testing.T) {
 		}
 	}))
 
-	w.RunTillExit()
+	w.RunTillExit(context.Background())
 }
 
 func TestErc20TransferPlugin(t *testing.T) {
 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(context.Background(), api)
+	w := NewHttpBasedEthWatcher(api)
 
 	w.RegisterTxReceiptPlugin(plugin.NewERC20TransferPlugin(
 		func(token, from, to string, amount decimal.Decimal, isRemove bool) {
 
-			logrus.Infof("New ERC20 Transfer >> token(%s), %s -> %s, amount: %s, isRemoved: %t",
+			utils.Infof("New ERC20 Transfer >> token(%s), %s -> %s, amount: %s, isRemoved: %t",
 				token, from, to, amount, isRemove)
 
 		},
 	))
 
-	w.RunTillExit()
+	w.RunTillExit(context.Background())
 }
 
 func TestFilterPlugin(t *testing.T) {
 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(context.Background(), api)
+	w := NewHttpBasedEthWatcher(api)
 
 	callback := func(txAndReceipt *structs.RemovableTxAndReceipt) {
 		fmt.Println("tx:", txAndReceipt.Tx.GetHash())
@@ -63,7 +64,7 @@ func TestFilterPlugin(t *testing.T) {
 
 	w.RegisterTxReceiptPlugin(plugin.NewTxReceiptPluginWithFilter(callback, filterFunc))
 
-	err := w.RunTillExitFromBlock(7840000)
+	err := w.RunTillExitFromBlock(context.Background(), 7840000)
 	if err != nil {
 		fmt.Println("RunTillExit with err:", err)
 	}
@@ -71,7 +72,7 @@ func TestFilterPlugin(t *testing.T) {
 
 func TestFilterPluginForDyDxApprove(t *testing.T) {
 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(context.Background(), api)
+	w := NewHttpBasedEthWatcher(api)
 
 	callback := func(txAndReceipt *structs.RemovableTxAndReceipt) {
 		receipt := txAndReceipt.Receipt
@@ -93,8 +94,7 @@ func TestFilterPluginForDyDxApprove(t *testing.T) {
 
 	w.RegisterTxReceiptPlugin(plugin.NewTxReceiptPluginWithFilter(callback, filterFunc))
 
-	err := w.RunTillExitFromBlock(7844853)
-	if err != nil {
+	if err := w.RunTillExitFromBlock(context.Background(), 7844853); err != nil {
 		fmt.Println("RunTillExit with err:", err)
 	}
 }
