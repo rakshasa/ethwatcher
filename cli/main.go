@@ -9,7 +9,6 @@ import (
 	"github.com/rakshasa/ethwatcher"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/plugin"
-	"github.com/rakshasa/ethwatcher/rpc"
 	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/spf13/cobra"
 )
@@ -83,13 +82,8 @@ var usdtTransferCMD = &cobra.Command{
 		// Transfer
 		topicsInterestedIn := []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
 
-		handler := func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error {
-
-			if from != to {
-				utils.Infof("See new USDT Transfer at blockRange: %d -> %d, count: %2d", from, to, len(receiptLogs))
-			} else {
-				utils.Infof("See new USDT Transfer at block: %d, count: %2d", from, len(receiptLogs))
-			}
+		handler := func(receiptLogs []blockchain.IReceiptLog) error {
+			utils.Infof("See new USDT Transfer count: %2d", len(receiptLogs))
 
 			for _, log := range receiptLogs {
 				utils.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
@@ -102,15 +96,11 @@ var usdtTransferCMD = &cobra.Command{
 
 		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
-			-1,
 			[]string{usdtContractAdx},
 			topicsInterestedIn,
 			handler,
 			ethwatcher.ReceiptLogWatcherConfig{
-				StepSizeForBigLag:               5,
-				IntervalForPollingNewBlockInSec: 5,
-				RPCMaxRetry:                     3,
-				ReturnForBlockWithNoReceiptLog:  true,
+				RPCMaxRetry: 3,
 			},
 		)
 
@@ -130,13 +120,8 @@ var contractEventListenerCMD = &cobra.Command{
     --events 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		handler := func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error {
-
-			if from != to {
-				utils.Infof("# of interested events at block(%d->%d): %d", from, to, len(receiptLogs))
-			} else {
-				utils.Infof("# of interested events at block(%d): %d", from, len(receiptLogs))
-			}
+		handler := func(receiptLogs []blockchain.IReceiptLog) error {
+			utils.Infof("# of interested events: %d", len(receiptLogs))
 
 			for _, log := range receiptLogs {
 				utils.Infof("  >> tx: https://etherscan.io/tx/%s", log.GetTransactionHash())
@@ -147,31 +132,13 @@ var contractEventListenerCMD = &cobra.Command{
 			return nil
 		}
 
-		startBlockNum := -1
-		if blockBackoff > 0 {
-			rpc := rpc.NewEthRPCWithRetry(api, 3)
-			curBlockNum, err := rpc.GetCurrentBlockNum()
-			if err == nil {
-				startBlockNum = int(curBlockNum) - blockBackoff
-
-				if startBlockNum > 0 {
-					utils.Infof("--block-backoff activated, we start from block: %d (= %d - %d)",
-						startBlockNum, curBlockNum, blockBackoff)
-				}
-			}
-		}
-
 		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
-			startBlockNum,
 			[]string{contractAdx},
 			eventSigs,
 			handler,
 			ethwatcher.ReceiptLogWatcherConfig{
-				StepSizeForBigLag:               5,
-				IntervalForPollingNewBlockInSec: 5,
-				RPCMaxRetry:                     3,
-				ReturnForBlockWithNoReceiptLog:  true,
+				RPCMaxRetry: 3,
 			},
 		)
 

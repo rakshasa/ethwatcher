@@ -19,16 +19,25 @@ func NewEthRPC(api string, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRP
 	return &EthBlockChainRPC{rpc}
 }
 
+func (rpc EthBlockChainRPC) NewFilter(addresses []string, topics []string) (string, error) {
+	filterParams := ethrpc.FilterParams{
+		FromBlock: "latest",
+		ToBlock:   "latest",
+		Address:   addresses,
+		Topics:    [][]string{topics},
+	}
+
+	filterId, err := rpc.rpcImpl.EthNewFilter(filterParams)
+	if err != nil {
+		utils.Warnf("eth_newfilter: failed to create new filter: %v", err)
+		return "", err
+	}
+
+	return filterId, err
+}
+
 func (rpc EthBlockChainRPC) GetBlockByNum(num uint64) (blockchain.Block, error) {
-	return rpc.getBlockByNum(num, true)
-}
-
-func (rpc EthBlockChainRPC) GetLiteBlockByNum(num uint64) (blockchain.Block, error) {
-	return rpc.getBlockByNum(num, false)
-}
-
-func (rpc EthBlockChainRPC) getBlockByNum(num uint64, withTx bool) (blockchain.Block, error) {
-	b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), withTx)
+	b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), true)
 	if err != nil {
 		return nil, err
 	}
@@ -39,21 +48,39 @@ func (rpc EthBlockChainRPC) getBlockByNum(num uint64, withTx bool) (blockchain.B
 	return &blockchain.EthereumBlock{b}, err
 }
 
-func (rpc EthBlockChainRPC) GetTransactionReceipt(txHash string) (blockchain.TransactionReceipt, error) {
-	receipt, err := rpc.rpcImpl.EthGetTransactionReceipt(txHash)
+func (rpc EthBlockChainRPC) GetBlockByNumWithoutTx(num uint64) (blockchain.Block, error) {
+	b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), false)
 	if err != nil {
 		return nil, err
 	}
-	if receipt == nil {
-		return nil, errors.New("nil receipt")
+	if b == nil {
+		return nil, errors.New("nil block")
 	}
 
-	return &blockchain.EthereumTransactionReceipt{receipt}, err
+	return &blockchain.EthereumBlock{b}, err
 }
 
 func (rpc EthBlockChainRPC) GetCurrentBlockNum() (uint64, error) {
 	num, err := rpc.rpcImpl.EthBlockNumber()
 	return uint64(num), err
+}
+
+func (rpc EthBlockChainRPC) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {
+	logs, err := rpc.rpcImpl.EthGetFilterChanges(filterId)
+	if err != nil {
+		utils.Warnf("eth_getfilterchanges: failed to retrieve filter changes: %v", err)
+		return nil, err
+	}
+
+	var result []blockchain.IReceiptLog
+	for i := 0; i < len(logs); i++ {
+		l := logs[i]
+		result = append(result, blockchain.ReceiptLog{Log: &l})
+
+		utils.Tracef("eth_getlogs: receipt log: %+v", l)
+	}
+
+	return result, err
 }
 
 func (rpc EthBlockChainRPC) GetLogs(
@@ -86,4 +113,16 @@ func (rpc EthBlockChainRPC) GetLogs(
 	}
 
 	return result, err
+}
+
+func (rpc EthBlockChainRPC) GetTransactionReceipt(txHash string) (blockchain.TransactionReceipt, error) {
+	receipt, err := rpc.rpcImpl.EthGetTransactionReceipt(txHash)
+	if err != nil {
+		return nil, err
+	}
+	if receipt == nil {
+		return nil, errors.New("nil receipt")
+	}
+
+	return &blockchain.EthereumTransactionReceipt{receipt}, err
 }

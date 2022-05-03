@@ -3,8 +3,6 @@ package ethwatcher
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/rpc"
@@ -12,180 +10,89 @@ import (
 )
 
 type ReceiptLogWatcher struct {
-	api                   string
-	startBlockNum         int
-	contractAddresses     []string
-	interestedTopics      []string
-	handler               func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error
-	config                ReceiptLogWatcherConfig
-	highestSyncedBlockNum int
-	highestSyncedLogIndex int
+	api               string
+	contractAddresses []string
+	interestedTopics  []string
+	handler           func(receiptLogs []blockchain.IReceiptLog) error
+	config            ReceiptLogWatcherConfig
 }
 
 func NewReceiptLogWatcher(
 	api string,
-	startBlockNum int,
 	contractAddresses []string,
 	interestedTopics []string,
-	handler func(from, to int, receiptLogs []blockchain.IReceiptLog, isUpToHighestBlock bool) error,
+	handler func(receiptLogs []blockchain.IReceiptLog) error,
 	configs ...ReceiptLogWatcherConfig,
 ) *ReceiptLogWatcher {
 
 	config := decideConfig(configs...)
 
-	pseudoSyncedLogIndex := config.StartSyncAfterLogIndex - 1
-
 	return &ReceiptLogWatcher{
-		api:                   api,
-		startBlockNum:         startBlockNum,
-		contractAddresses:     contractAddresses,
-		interestedTopics:      interestedTopics,
-		handler:               handler,
-		config:                config,
-		highestSyncedBlockNum: startBlockNum,
-		highestSyncedLogIndex: pseudoSyncedLogIndex,
+		api:               api,
+		contractAddresses: contractAddresses,
+		interestedTopics:  interestedTopics,
+		handler:           handler,
+		config:            config,
 	}
 }
 
 func decideConfig(configs ...ReceiptLogWatcherConfig) ReceiptLogWatcherConfig {
-	var config ReceiptLogWatcherConfig
 	if len(configs) == 0 {
-		config = defaultConfig
-	} else {
-		config = configs[0]
+		return defaultConfig
+	}
 
-		if config.IntervalForPollingNewBlockInSec <= 0 {
-			config.IntervalForPollingNewBlockInSec = defaultConfig.IntervalForPollingNewBlockInSec
-		}
+	config := configs[0]
 
-		if config.StepSizeForBigLag <= 0 {
-			config.StepSizeForBigLag = defaultConfig.StepSizeForBigLag
-		}
-
-		if config.RPCMaxRetry <= 0 {
-			config.RPCMaxRetry = defaultConfig.RPCMaxRetry
-		}
+	if config.RPCMaxRetry <= 0 {
+		config.RPCMaxRetry = defaultConfig.RPCMaxRetry
 	}
 
 	return config
 }
 
 type ReceiptLogWatcherConfig struct {
-	StepSizeForBigLag               int
-	ReturnForBlockWithNoReceiptLog  bool
-	IntervalForPollingNewBlockInSec int
-	RPCMaxRetry                     int
-	LagToHighestBlock               int
-	StartSyncAfterLogIndex          int
+	RPCMaxRetry int
 }
 
 var defaultConfig = ReceiptLogWatcherConfig{
-	StepSizeForBigLag:               50,
-	ReturnForBlockWithNoReceiptLog:  false,
-	IntervalForPollingNewBlockInSec: 15,
-	RPCMaxRetry:                     5,
-	LagToHighestBlock:               0,
-	StartSyncAfterLogIndex:          0,
+	RPCMaxRetry: 5,
 }
 
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
-
-	var blockNumToBeProcessedNext = w.startBlockNum
-
 	rpc := rpc.NewEthRPCWithRetry(w.api, w.config.RPCMaxRetry)
 
+	filterId, err := rpc.NewFilter(w.contractAddresses, w.interestedTopics)
+	if err != nil {
+		return fmt.Errorf("failed to request new filter from api: %v", err)
+	}
+
 	for {
+		utils.Debugf("polling eth filter changes...")
+
+		// type queryResult struct {
+		// 	logs []
+		// }
+
+		// TODO: Change to select wait for result.
+
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
-			highestBlock, err := rpc.GetCurrentBlockNum()
+			logs, err := rpc.GetFilterChanges(filterId)
 			if err != nil {
 				return err
 			}
-
-			if blockNumToBeProcessedNext < 0 {
-				blockNumToBeProcessedNext = int(highestBlock)
-			}
-
-			// [blockNumToBeProcessedNext...highestBlockCanProcess..[Lag]..CurrentHighestBlock]
-			highestBlockCanProcess := int(highestBlock) - w.config.LagToHighestBlock
-			numOfBlocksToProcess := highestBlockCanProcess - blockNumToBeProcessedNext + 1
-
-			if numOfBlocksToProcess <= 0 {
-				sleepSec := w.config.IntervalForPollingNewBlockInSec
-
-				utils.Debugf("no ready block after %d(lag: %d), sleep %d seconds", highestBlockCanProcess, w.config.LagToHighestBlock, sleepSec)
-
-				select {
-				case <-time.After(time.Duration(sleepSec) * time.Second):
-					continue
-				case <-ctx.Done():
-					return nil
-				}
-			}
-
-			var to int
-			if numOfBlocksToProcess > w.config.StepSizeForBigLag {
-				// quick mode
-				to = blockNumToBeProcessedNext + w.config.StepSizeForBigLag - 1
-			} else {
-				// normal mode, up to cur highest block num can process
-				to = highestBlockCanProcess
-			}
-
-			logs, err := rpc.GetLogs(uint64(blockNumToBeProcessedNext), uint64(to), w.contractAddresses, w.interestedTopics)
-			if err != nil {
-				return err
-			}
-
-			isUpToHighestBlock := to == int(highestBlock)
 
 			if len(logs) == 0 {
-				if w.config.ReturnForBlockWithNoReceiptLog {
-					err := w.handler(blockNumToBeProcessedNext, to, nil, isUpToHighestBlock)
-					if err != nil {
-						utils.Infof("err when handling nil receipt log, block range: %d - %d", blockNumToBeProcessedNext, to)
-						return fmt.Errorf("ethwatcher handler(nil) returns error: %s", err)
-					}
-				}
-			} else {
-
-				err := w.handler(blockNumToBeProcessedNext, to, logs, isUpToHighestBlock)
-				if err != nil {
-					utils.Infof("err when handling receipt log, block range: %d - %d, receipt logs: %+v",
-						blockNumToBeProcessedNext, to, logs,
-					)
-
-					return fmt.Errorf("ethwatcher handler returns error: %s", err)
-				}
+				// TODO: Properly handle this?
+				continue
 			}
 
-			// todo rm 2nd param
-			w.updateHighestSyncedBlockNumAndLogIndex(to, -1)
-
-			blockNumToBeProcessedNext = to + 1
+			if err := w.handler(logs); err != nil {
+				utils.Infof("err when handling receipt logs: %+v", logs)
+				return fmt.Errorf("ethwatcher handler returns error: %s", err)
+			}
 		}
 	}
-}
-
-var progressLock = sync.Mutex{}
-
-func (w *ReceiptLogWatcher) updateHighestSyncedBlockNumAndLogIndex(block int, logIndex int) {
-	progressLock.Lock()
-	defer progressLock.Unlock()
-
-	w.highestSyncedBlockNum = block
-	w.highestSyncedLogIndex = logIndex
-}
-
-func (w *ReceiptLogWatcher) GetHighestSyncedBlockNum() int {
-	return w.highestSyncedBlockNum
-}
-
-func (w *ReceiptLogWatcher) GetHighestSyncedBlockNumAndLogIndex() (int, int) {
-	progressLock.Lock()
-	defer progressLock.Unlock()
-
-	return w.highestSyncedBlockNum, w.highestSyncedLogIndex
 }

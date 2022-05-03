@@ -3,6 +3,7 @@ FROM golang:1.13
 WORKDIR /go/src
 COPY . /go/src 
 
+RUN go test ./...
 RUN go build -o bin/ethereum-watcher cli/main.go
 
 FROM alpine
