@@ -3,6 +3,7 @@ package ethwatcher
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/rpc"
@@ -15,6 +16,16 @@ type ReceiptLogWatcher struct {
 	interestedTopics  []string
 	handler           func(receiptLogs []blockchain.IReceiptLog) error
 	config            ReceiptLogWatcherConfig
+}
+
+type ReceiptLogWatcherConfig struct {
+	PollingInterval time.Duration
+	RPCMaxRetry     int
+}
+
+var defaultConfig = ReceiptLogWatcherConfig{
+	PollingInterval: 5 * time.Second,
+	RPCMaxRetry:     5,
 }
 
 func NewReceiptLogWatcher(
@@ -50,14 +61,6 @@ func decideConfig(configs ...ReceiptLogWatcherConfig) ReceiptLogWatcherConfig {
 	return config
 }
 
-type ReceiptLogWatcherConfig struct {
-	RPCMaxRetry int
-}
-
-var defaultConfig = ReceiptLogWatcherConfig{
-	RPCMaxRetry: 5,
-}
-
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 	rpc := rpc.NewEthRPCWithRetry(w.api, w.config.RPCMaxRetry)
 
@@ -69,30 +72,27 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 	for {
 		utils.Debugf("polling eth filter changes...")
 
-		// type queryResult struct {
-		// 	logs []
-		// }
+		prevTime := time.Now()
 
-		// TODO: Change to select wait for result.
+		logs, err := rpc.GetFilterChanges(filterId)
+		if err != nil {
+			return err
+		}
+
+		if len(logs) == 0 {
+			// TODO: Properly handle this?
+			continue
+		}
+
+		if err := w.handler(logs); err != nil {
+			utils.Infof("err when handling receipt logs: %+v", logs)
+			return fmt.Errorf("ethwatcher handler returns error: %s", err)
+		}
 
 		select {
 		case <-ctx.Done():
 			return nil
-		default:
-			logs, err := rpc.GetFilterChanges(filterId)
-			if err != nil {
-				return err
-			}
-
-			if len(logs) == 0 {
-				// TODO: Properly handle this?
-				continue
-			}
-
-			if err := w.handler(logs); err != nil {
-				utils.Infof("err when handling receipt logs: %+v", logs)
-				return fmt.Errorf("ethwatcher handler returns error: %s", err)
-			}
+		case <-time.After(w.config.PollingInterval - time.Since(prevTime)):
 		}
 	}
 }
