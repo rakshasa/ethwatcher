@@ -36,37 +36,37 @@ func SetCategoryLogLevel(l logrus.Level) {
 }
 
 func Printf(format string, v ...interface{}) {
-	if logLevel <= logrus.InfoLevel {
+	if logLevel >= logrus.InfoLevel {
 		logrus.Infof(logPrefix+format, v...)
 	}
 }
 
 func Debugf(format string, v ...interface{}) {
-	if logLevel <= logrus.DebugLevel {
+	if logLevel >= logrus.DebugLevel {
 		logrus.Debugf(logPrefix+format, v...)
 	}
 }
 
 func Errorf(format string, v ...interface{}) {
-	if logLevel <= logrus.ErrorLevel {
+	if logLevel >= logrus.ErrorLevel {
 		logrus.Errorf(logPrefix+format, v...)
 	}
 }
 
 func Infof(format string, v ...interface{}) {
-	if logLevel <= logrus.InfoLevel {
+	if logLevel >= logrus.InfoLevel {
 		logrus.Infof(logPrefix+format, v...)
 	}
 }
 
 func Tracef(format string, v ...interface{}) {
-	if logLevel <= logrus.TraceLevel {
+	if logLevel >= logrus.TraceLevel {
 		logrus.Tracef(logPrefix+format, v...)
 	}
 }
 
 func Warnf(format string, v ...interface{}) {
-	if logLevel <= logrus.WarnLevel {
+	if logLevel >= logrus.WarnLevel {
 		logrus.Warnf(logPrefix+format, v...)
 	}
 }
