@@ -97,7 +97,7 @@ var usdtTransferCMD = &cobra.Command{
 		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
 			[]string{usdtContractAdx},
-			topicsInterestedIn,
+			[][]string{topicsInterestedIn},
 			handler,
 			ethwatcher.WithRPCMaxRetries(3),
 		)
@@ -133,7 +133,7 @@ var contractEventListenerCMD = &cobra.Command{
 		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
 			api,
 			[]string{contractAdx},
-			eventSigs,
+			[][]string{eventSigs},
 			handler,
 			ethwatcher.WithRPCMaxRetries(3),
 		)

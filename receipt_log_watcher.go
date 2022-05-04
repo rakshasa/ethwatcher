@@ -10,19 +10,35 @@ import (
 	"github.com/rakshasa/ethwatcher/utils"
 )
 
+const (
+	MaxBlockStepSize = 3500
+)
+
 type ReceiptLogWatcher struct {
 	api               string
 	contractAddresses []string
-	interestedTopics  []string
+	interestedTopics  [][]string
 	handler           func(receiptLogs []blockchain.IReceiptLog) error
 	config            receiptLogWatcherConfig
 }
 
 type receiptLogWatcherConfig struct {
-	blockStepSize   uint64
+	blockStepSize   uint
 	pollingInterval time.Duration
 	rpcMaxRetries   int
 	useFilter       bool
+}
+
+func WithBlockStepSize(stepSize uint) func(*receiptLogWatcherConfig) {
+	return func(config *receiptLogWatcherConfig) {
+		config.blockStepSize = stepSize
+	}
+}
+
+func WithPollingInterval(interval time.Duration) func(*receiptLogWatcherConfig) {
+	return func(config *receiptLogWatcherConfig) {
+		config.pollingInterval = interval
+	}
 }
 
 func WithRPCMaxRetries(retries int) func(*receiptLogWatcherConfig) {
@@ -31,10 +47,16 @@ func WithRPCMaxRetries(retries int) func(*receiptLogWatcherConfig) {
 	}
 }
 
+func WithUseFilter(use bool) func(*receiptLogWatcherConfig) {
+	return func(config *receiptLogWatcherConfig) {
+		config.useFilter = use
+	}
+}
+
 func NewReceiptLogWatcher(
 	api string,
 	contractAddresses []string,
-	interestedTopics []string,
+	interestedTopics [][]string,
 	handler func(receiptLogs []blockchain.IReceiptLog) error,
 	options ...func(*receiptLogWatcherConfig),
 ) *ReceiptLogWatcher {
@@ -59,6 +81,13 @@ func NewReceiptLogWatcher(
 }
 
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
+	// TODO: These checks should be done during initialization.
+	if w.config.blockStepSize > MaxBlockStepSize {
+		return fmt.Errorf("invalid BlockStepSize value")
+	}
+	if w.config.pollingInterval < 0 {
+		return fmt.Errorf("invalid PollingInterval value")
+	}
 	if w.config.rpcMaxRetries < 0 {
 		return fmt.Errorf("invalid RPCMaxRetries value")
 	}
@@ -97,8 +126,12 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				return err
 			}
 
-			if nextBlockNum-prevBlockNum > w.config.blockStepSize {
-				nextBlockNum = prevBlockNum + w.config.blockStepSize
+			if nextBlockNum < prevBlockNum {
+				return fmt.Errorf("invalid current block number: less than previous received block number")
+			}
+
+			if nextBlockNum-prevBlockNum > uint64(w.config.blockStepSize) {
+				nextBlockNum = prevBlockNum + uint64(w.config.blockStepSize)
 			}
 
 			logs, err = rpc.GetLogs(prevBlockNum, nextBlockNum, w.contractAddresses, w.interestedTopics)

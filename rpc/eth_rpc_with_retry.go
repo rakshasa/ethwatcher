@@ -12,6 +12,7 @@ type EthBlockChainRPCWithRetry struct {
 	maxRetries uint
 }
 
+// TODO: Add retry interval.
 func NewEthRPCWithRetry(api string, maxRetries uint, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPCWithRetry {
 	rpc, _ := Dial(api)
 
@@ -21,7 +22,7 @@ func NewEthRPCWithRetry(api string, maxRetries uint, options ...func(rpc *ethrpc
 	}
 }
 
-func (rpc EthBlockChainRPCWithRetry) NewFilter(addresses []string, topics []string) (filterId string, err error) {
+func (rpc EthBlockChainRPCWithRetry) NewFilter(addresses []string, topics [][]string) (filterId string, err error) {
 	for i := uint(0); i <= rpc.maxRetries; i++ {
 		filterId, err = rpc.Client.NewFilter(addresses, topics)
 		if err == nil {
@@ -86,11 +87,7 @@ func (rpc EthBlockChainRPCWithRetry) GetFilterChanges(filterId string) (logs []b
 	return
 }
 
-func (rpc EthBlockChainRPCWithRetry) GetLogs(
-	fromBlockNum, toBlockNum uint64,
-	addresses []string,
-	topics []string,
-) (rst []blockchain.IReceiptLog, err error) {
+func (rpc EthBlockChainRPCWithRetry) GetLogs(fromBlockNum, toBlockNum uint64, addresses []string, topics [][]string) (rst []blockchain.IReceiptLog, err error) {
 	for i := uint(0); i <= rpc.maxRetries; i++ {
 		rst, err = rpc.Client.GetLogs(fromBlockNum, toBlockNum, addresses, topics)
 		if err == nil {

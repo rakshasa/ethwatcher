@@ -3,16 +3,17 @@ package rpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
-	// "github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/onrik/ethrpc"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/utils"
 )
 
 type Client struct {
-	// client *ethclient.Client
+	client *ethclient.Client
 
 	// Deprecate:
 	rpcImpl *ethrpc.EthRPC
@@ -23,23 +24,23 @@ func Dial(rawurl string) (*Client, error) {
 }
 
 func DialContext(ctx context.Context, rawurl string) (*Client, error) {
-	// client, err := ethclient.DialContext(ctx, rawurl)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to dial ethereum api server: %v", err)
-	// }
+	client, err := ethclient.DialContext(ctx, rawurl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial ethereum api server: %v", err)
+	}
 
 	return &Client{
-		// client:  client,
+		client:  client,
 		rpcImpl: ethrpc.New(rawurl),
 	}, nil
 }
 
-func (rpc Client) NewFilter(addresses []string, topics []string) (string, error) {
+func (rpc Client) NewFilter(addresses []string, topics [][]string) (string, error) {
 	filterParams := ethrpc.FilterParams{
 		FromBlock: "latest",
 		ToBlock:   "latest",
 		Address:   addresses,
-		Topics:    [][]string{topics},
+		Topics:    topics,
 	}
 
 	filterId, err := rpc.rpcImpl.EthNewFilter(filterParams)
@@ -98,17 +99,12 @@ func (rpc Client) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, e
 	return result, err
 }
 
-func (rpc Client) GetLogs(
-	fromBlockNum, toBlockNum uint64,
-	addresses []string,
-	topics []string,
-) ([]blockchain.IReceiptLog, error) {
-
+func (rpc Client) GetLogs(fromBlockNum, toBlockNum uint64, addresses []string, topics [][]string) ([]blockchain.IReceiptLog, error) {
 	filterParam := ethrpc.FilterParams{
 		FromBlock: "0x" + strconv.FormatUint(fromBlockNum, 16),
 		ToBlock:   "0x" + strconv.FormatUint(toBlockNum, 16),
 		Address:   addresses,
-		Topics:    [][]string{topics},
+		Topics:    topics,
 	}
 
 	logs, err := rpc.rpcImpl.EthGetLogs(filterParam)
