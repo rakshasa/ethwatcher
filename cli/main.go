@@ -99,9 +99,7 @@ var usdtTransferCMD = &cobra.Command{
 			[]string{usdtContractAdx},
 			topicsInterestedIn,
 			handler,
-			ethwatcher.ReceiptLogWatcherConfig{
-				RPCMaxRetry: 3,
-			},
+			ethwatcher.WithRPCMaxRetries(3),
 		)
 
 		receiptLogWatcher.Run(cmd.Context())
@@ -137,9 +135,7 @@ var contractEventListenerCMD = &cobra.Command{
 			[]string{contractAdx},
 			eventSigs,
 			handler,
-			ethwatcher.ReceiptLogWatcherConfig{
-				RPCMaxRetry: 3,
-			},
+			ethwatcher.WithRPCMaxRetries(3),
 		)
 
 		receiptLogWatcher.Run(cmd.Context())

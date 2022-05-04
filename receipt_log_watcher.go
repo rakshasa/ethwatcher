@@ -15,21 +15,20 @@ type ReceiptLogWatcher struct {
 	contractAddresses []string
 	interestedTopics  []string
 	handler           func(receiptLogs []blockchain.IReceiptLog) error
-	config            ReceiptLogWatcherConfig
+	config            receiptLogWatcherConfig
 }
 
-type ReceiptLogWatcherConfig struct {
-	BlockStepSize   uint64
-	PollingInterval time.Duration
-	RPCMaxRetry     int
-	UseFilter       bool
+type receiptLogWatcherConfig struct {
+	blockStepSize   uint64
+	pollingInterval time.Duration
+	rpcMaxRetries   int
+	useFilter       bool
 }
 
-var defaultConfig = ReceiptLogWatcherConfig{
-	BlockStepSize:   50,
-	PollingInterval: 5 * time.Second,
-	RPCMaxRetry:     5,
-	UseFilter:       false,
+func WithRPCMaxRetries(retries int) func(*receiptLogWatcherConfig) {
+	return func(config *receiptLogWatcherConfig) {
+		config.rpcMaxRetries = retries
+	}
 }
 
 func NewReceiptLogWatcher(
@@ -37,39 +36,40 @@ func NewReceiptLogWatcher(
 	contractAddresses []string,
 	interestedTopics []string,
 	handler func(receiptLogs []blockchain.IReceiptLog) error,
-	configs ...ReceiptLogWatcherConfig,
+	options ...func(*receiptLogWatcherConfig),
 ) *ReceiptLogWatcher {
+	config := receiptLogWatcherConfig{
+		blockStepSize:   50,
+		pollingInterval: 5 * time.Second,
+		rpcMaxRetries:   5,
+		useFilter:       false,
+	}
+
+	for _, optFn := range options {
+		optFn(&config)
+	}
+
 	return &ReceiptLogWatcher{
 		api:               api,
 		contractAddresses: contractAddresses,
 		interestedTopics:  interestedTopics,
 		handler:           handler,
-		config:            decideConfig(configs...),
+		config:            config,
 	}
-}
-
-func decideConfig(configs ...ReceiptLogWatcherConfig) ReceiptLogWatcherConfig {
-	if len(configs) == 0 {
-		return defaultConfig
-	}
-
-	config := configs[0]
-
-	if config.RPCMaxRetry <= 0 {
-		config.RPCMaxRetry = defaultConfig.RPCMaxRetry
-	}
-
-	return config
 }
 
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
-	rpc := rpc.NewEthRPCWithRetry(w.api, w.config.RPCMaxRetry)
+	if w.config.rpcMaxRetries < 0 {
+		return fmt.Errorf("invalid RPCMaxRetries value")
+	}
+
+	rpc := rpc.NewEthRPCWithRetry(w.api, uint(w.config.rpcMaxRetries))
 
 	var err error
 	var filterId string
 	var prevBlockNum, nextBlockNum uint64
 
-	if w.config.UseFilter {
+	if w.config.useFilter {
 		if filterId, err = rpc.NewFilter(w.contractAddresses, w.interestedTopics); err != nil {
 			return fmt.Errorf("failed to request new filter from api: %v", err)
 		}
@@ -86,7 +86,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 		var logs []blockchain.IReceiptLog
 
-		if w.config.UseFilter {
+		if w.config.useFilter {
 			logs, err = rpc.GetFilterChanges(filterId)
 			if err != nil {
 				return err
@@ -97,8 +97,8 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				return err
 			}
 
-			if nextBlockNum-prevBlockNum > w.config.BlockStepSize {
-				nextBlockNum = prevBlockNum + w.config.BlockStepSize
+			if nextBlockNum-prevBlockNum > w.config.blockStepSize {
+				nextBlockNum = prevBlockNum + w.config.blockStepSize
 			}
 
 			logs, err = rpc.GetLogs(prevBlockNum, nextBlockNum, w.contractAddresses, w.interestedTopics)
@@ -116,7 +116,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 			}
 		}
 
-		if w.config.UseFilter {
+		if w.config.useFilter {
 		} else {
 			prevBlockNum = nextBlockNum
 		}
@@ -124,7 +124,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(w.config.PollingInterval - time.Since(prevTime)):
+		case <-time.After(w.config.pollingInterval - time.Since(prevTime)):
 		}
 	}
 }
