@@ -19,12 +19,14 @@ type ReceiptLogWatcher struct {
 }
 
 type ReceiptLogWatcherConfig struct {
+	BlockStepSize   uint64
 	PollingInterval time.Duration
 	RPCMaxRetry     int
 	UseFilter       bool
 }
 
 var defaultConfig = ReceiptLogWatcherConfig{
+	BlockStepSize:   50,
 	PollingInterval: 5 * time.Second,
 	RPCMaxRetry:     5,
 	UseFilter:       false,
@@ -65,7 +67,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 	var err error
 	var filterId string
-	var prevBlockNum uint64
+	var prevBlockNum, nextBlockNum uint64
 
 	if w.config.UseFilter {
 		if filterId, err = rpc.NewFilter(w.contractAddresses, w.interestedTopics); err != nil {
@@ -78,7 +80,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 	}
 
 	for {
-		utils.Debugf("polling eth filter changes...")
+		utils.Debugf("polling eth receipt log changes...")
 
 		prevTime := time.Now()
 
@@ -90,27 +92,33 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				return err
 			}
 		} else {
-			currentBlockNum, err := rpc.GetCurrentBlockNum()
+			nextBlockNum, err = rpc.GetCurrentBlockNum()
 			if err != nil {
 				return err
 			}
 
-			logs, err = rpc.GetLogs(prevBlockNum, currentBlockNum, w.contractAddresses, w.interestedTopics)
+			if nextBlockNum-prevBlockNum > w.config.BlockStepSize {
+				nextBlockNum = prevBlockNum + w.config.BlockStepSize
+			}
+
+			logs, err = rpc.GetLogs(prevBlockNum, nextBlockNum, w.contractAddresses, w.interestedTopics)
 			if err != nil {
 				return err
 			}
-
-			prevBlockNum = currentBlockNum
 		}
 
-		if len(logs) == 0 {
-			// TODO: Properly handle this?
-			continue
+		// TODO: Properly handle empty results.
+
+		if len(logs) != 0 {
+			if err := w.handler(logs); err != nil {
+				utils.Infof("error handling receipt logs: %+v", logs)
+				return fmt.Errorf("could not handle receipt logs: %v", err)
+			}
 		}
 
-		if err := w.handler(logs); err != nil {
-			utils.Infof("err when handling receipt logs: %+v", logs)
-			return fmt.Errorf("ethwatcher handler returns error: %s", err)
+		if w.config.UseFilter {
+		} else {
+			prevBlockNum = nextBlockNum
 		}
 
 		select {
