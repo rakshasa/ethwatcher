@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"context"
 	"time"
 
 	"github.com/onrik/ethrpc"
@@ -61,9 +62,9 @@ func (rpc EthBlockChainRPCWithRetry) GetBlockByNumWithoutTx(num uint64) (rst blo
 	return
 }
 
-func (rpc EthBlockChainRPCWithRetry) GetCurrentBlockNum() (rst uint64, err error) {
+func (rpc EthBlockChainRPCWithRetry) BlockNumber(ctx context.Context) (result uint64, err error) {
 	for i := uint(0); i <= rpc.maxRetries; i++ {
-		rst, err = rpc.Client.GetCurrentBlockNum()
+		result, err = rpc.Client.BlockNumber(ctx)
 		if err == nil {
 			break
 		}

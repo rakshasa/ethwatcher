@@ -168,7 +168,7 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 	for {
 		utils.Debugf("ethereum watcher handling events...")
 
-		latestBlockNum, err := watcher.rpc.GetCurrentBlockNum()
+		latestBlockNum, err := watcher.rpc.BlockNumber(ctx)
 		if err != nil {
 			return fmt.Errorf("rpc.GetCurrentBlockNum: %w", err)
 		}

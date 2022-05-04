@@ -76,9 +76,8 @@ func (rpc Client) GetBlockByNumWithoutTx(num uint64) (blockchain.Block, error) {
 	return &blockchain.EthereumBlock{b}, err
 }
 
-func (rpc Client) GetCurrentBlockNum() (uint64, error) {
-	num, err := rpc.rpcImpl.EthBlockNumber()
-	return uint64(num), err
+func (rpc Client) BlockNumber(ctx context.Context) (uint64, error) {
+	return rpc.client.BlockNumber(ctx)
 }
 
 func (rpc Client) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {

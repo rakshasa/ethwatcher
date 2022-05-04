@@ -6,8 +6,11 @@ project_root="$(cd "$(git -C "$( dirname "${BASH_SOURCE[0]}" )" rev-parse --show
 
 
 dependencies=(
-  "github.com/ethereum/go-ethereum/ethclient@v1.10.17"
-  "github.com/spf13/cobra@v1.4.0"
+  "github.com/ethereum/go-ethereum/ethclient@latest"
+  "github.com/labstack/gommon/log@latest"
+  "github.com/sirupsen/logrus@latest"
+  "github.com/shopspring/decimal@latest"
+  "github.com/spf13/cobra@latest"
   "golang.org/x/crypto@latest"
 )
 

@@ -103,7 +103,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to request new filter from api: %v", err)
 		}
 	} else {
-		if prevBlockNum, err = rpc.GetCurrentBlockNum(); err != nil {
+		if prevBlockNum, err = rpc.BlockNumber(ctx); err != nil {
 			return err
 		}
 	}
@@ -121,7 +121,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				return err
 			}
 		} else {
-			nextBlockNum, err = rpc.GetCurrentBlockNum()
+			nextBlockNum, err = rpc.BlockNumber(ctx)
 			if err != nil {
 				return err
 			}
