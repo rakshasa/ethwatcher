@@ -8,19 +8,19 @@ import (
 )
 
 type EthBlockChainRPCWithRetry struct {
-	*EthBlockChainRPC
+	*Client
 	maxRetryTimes int
 }
 
 func NewEthRPCWithRetry(api string, maxRetryCount int, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPCWithRetry {
-	rpc := NewEthRPC(api, options...)
+	rpc, _ := Dial(api)
 
 	return &EthBlockChainRPCWithRetry{rpc, maxRetryCount}
 }
 
 func (rpc EthBlockChainRPCWithRetry) NewFilter(addresses []string, topics []string) (filterId string, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		filterId, err = rpc.EthBlockChainRPC.NewFilter(addresses, topics)
+		filterId, err = rpc.Client.NewFilter(addresses, topics)
 		if err == nil {
 			break
 		}
@@ -33,7 +33,7 @@ func (rpc EthBlockChainRPCWithRetry) NewFilter(addresses []string, topics []stri
 
 func (rpc EthBlockChainRPCWithRetry) GetBlockByNum(num uint64) (rst blockchain.Block, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetBlockByNum(num)
+		rst, err = rpc.Client.GetBlockByNum(num)
 		if err == nil {
 			break
 		}
@@ -46,7 +46,7 @@ func (rpc EthBlockChainRPCWithRetry) GetBlockByNum(num uint64) (rst blockchain.B
 
 func (rpc EthBlockChainRPCWithRetry) GetBlockByNumWithoutTx(num uint64) (rst blockchain.Block, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetBlockByNumWithoutTx(num)
+		rst, err = rpc.Client.GetBlockByNumWithoutTx(num)
 		if err == nil {
 			break
 		}
@@ -59,7 +59,7 @@ func (rpc EthBlockChainRPCWithRetry) GetBlockByNumWithoutTx(num uint64) (rst blo
 
 func (rpc EthBlockChainRPCWithRetry) GetCurrentBlockNum() (rst uint64, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetCurrentBlockNum()
+		rst, err = rpc.Client.GetCurrentBlockNum()
 		if err == nil {
 			break
 		}
@@ -72,7 +72,7 @@ func (rpc EthBlockChainRPCWithRetry) GetCurrentBlockNum() (rst uint64, err error
 
 func (rpc EthBlockChainRPCWithRetry) GetFilterChanges(filterId string) (logs []blockchain.IReceiptLog, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		logs, err = rpc.EthBlockChainRPC.GetFilterChanges(filterId)
+		logs, err = rpc.Client.GetFilterChanges(filterId)
 		if err == nil {
 			break
 		}
@@ -89,7 +89,7 @@ func (rpc EthBlockChainRPCWithRetry) GetLogs(
 	topics []string,
 ) (rst []blockchain.IReceiptLog, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetLogs(fromBlockNum, toBlockNum, addresses, topics)
+		rst, err = rpc.Client.GetLogs(fromBlockNum, toBlockNum, addresses, topics)
 		if err == nil {
 			break
 		}
@@ -102,7 +102,7 @@ func (rpc EthBlockChainRPCWithRetry) GetLogs(
 
 func (rpc EthBlockChainRPCWithRetry) GetTransactionReceipt(txHash string) (rst blockchain.TransactionReceipt, err error) {
 	for i := 0; i <= rpc.maxRetryTimes; i++ {
-		rst, err = rpc.EthBlockChainRPC.GetTransactionReceipt(txHash)
+		rst, err = rpc.Client.GetTransactionReceipt(txHash)
 		if err == nil {
 			break
 		}

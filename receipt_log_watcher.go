@@ -21,11 +21,13 @@ type ReceiptLogWatcher struct {
 type ReceiptLogWatcherConfig struct {
 	PollingInterval time.Duration
 	RPCMaxRetry     int
+	UseFilter       bool
 }
 
 var defaultConfig = ReceiptLogWatcherConfig{
 	PollingInterval: 5 * time.Second,
 	RPCMaxRetry:     5,
+	UseFilter:       false,
 }
 
 func NewReceiptLogWatcher(
@@ -35,15 +37,12 @@ func NewReceiptLogWatcher(
 	handler func(receiptLogs []blockchain.IReceiptLog) error,
 	configs ...ReceiptLogWatcherConfig,
 ) *ReceiptLogWatcher {
-
-	config := decideConfig(configs...)
-
 	return &ReceiptLogWatcher{
 		api:               api,
 		contractAddresses: contractAddresses,
 		interestedTopics:  interestedTopics,
 		handler:           handler,
-		config:            config,
+		config:            decideConfig(configs...),
 	}
 }
 
@@ -64,9 +63,18 @@ func decideConfig(configs ...ReceiptLogWatcherConfig) ReceiptLogWatcherConfig {
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 	rpc := rpc.NewEthRPCWithRetry(w.api, w.config.RPCMaxRetry)
 
-	filterId, err := rpc.NewFilter(w.contractAddresses, w.interestedTopics)
-	if err != nil {
-		return fmt.Errorf("failed to request new filter from api: %v", err)
+	var err error
+	var filterId string
+	var prevBlockNum uint64
+
+	if w.config.UseFilter {
+		if filterId, err = rpc.NewFilter(w.contractAddresses, w.interestedTopics); err != nil {
+			return fmt.Errorf("failed to request new filter from api: %v", err)
+		}
+	} else {
+		if prevBlockNum, err = rpc.GetCurrentBlockNum(); err != nil {
+			return err
+		}
 	}
 
 	for {
@@ -74,9 +82,25 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 		prevTime := time.Now()
 
-		logs, err := rpc.GetFilterChanges(filterId)
-		if err != nil {
-			return err
+		var logs []blockchain.IReceiptLog
+
+		if w.config.UseFilter {
+			logs, err = rpc.GetFilterChanges(filterId)
+			if err != nil {
+				return err
+			}
+		} else {
+			currentBlockNum, err := rpc.GetCurrentBlockNum()
+			if err != nil {
+				return err
+			}
+
+			logs, err = rpc.GetLogs(prevBlockNum, currentBlockNum, w.contractAddresses, w.interestedTopics)
+			if err != nil {
+				return err
+			}
+
+			prevBlockNum = currentBlockNum
 		}
 
 		if len(logs) == 0 {

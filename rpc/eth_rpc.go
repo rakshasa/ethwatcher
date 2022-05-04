@@ -1,25 +1,40 @@
 package rpc
 
 import (
+	"context"
 	"errors"
 	"strconv"
 
+	// "github.com/ethereum/go-ethereum/ethclient"
 	"github.com/onrik/ethrpc"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/utils"
 )
 
-type EthBlockChainRPC struct {
+type Client struct {
+	// client *ethclient.Client
+
+	// Deprecate:
 	rpcImpl *ethrpc.EthRPC
 }
 
-func NewEthRPC(api string, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPC {
-	rpc := ethrpc.New(api, options...)
-
-	return &EthBlockChainRPC{rpc}
+func Dial(rawurl string) (*Client, error) {
+	return DialContext(context.Background(), rawurl)
 }
 
-func (rpc EthBlockChainRPC) NewFilter(addresses []string, topics []string) (string, error) {
+func DialContext(ctx context.Context, rawurl string) (*Client, error) {
+	// client, err := ethclient.DialContext(ctx, rawurl)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to dial ethereum api server: %v", err)
+	// }
+
+	return &Client{
+		// client:  client,
+		rpcImpl: ethrpc.New(rawurl),
+	}, nil
+}
+
+func (rpc Client) NewFilter(addresses []string, topics []string) (string, error) {
 	filterParams := ethrpc.FilterParams{
 		FromBlock: "latest",
 		ToBlock:   "latest",
@@ -36,7 +51,7 @@ func (rpc EthBlockChainRPC) NewFilter(addresses []string, topics []string) (stri
 	return filterId, err
 }
 
-func (rpc EthBlockChainRPC) GetBlockByNum(num uint64) (blockchain.Block, error) {
+func (rpc Client) GetBlockByNum(num uint64) (blockchain.Block, error) {
 	b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), true)
 	if err != nil {
 		return nil, err
@@ -48,7 +63,7 @@ func (rpc EthBlockChainRPC) GetBlockByNum(num uint64) (blockchain.Block, error) 
 	return &blockchain.EthereumBlock{b}, err
 }
 
-func (rpc EthBlockChainRPC) GetBlockByNumWithoutTx(num uint64) (blockchain.Block, error) {
+func (rpc Client) GetBlockByNumWithoutTx(num uint64) (blockchain.Block, error) {
 	b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), false)
 	if err != nil {
 		return nil, err
@@ -60,12 +75,12 @@ func (rpc EthBlockChainRPC) GetBlockByNumWithoutTx(num uint64) (blockchain.Block
 	return &blockchain.EthereumBlock{b}, err
 }
 
-func (rpc EthBlockChainRPC) GetCurrentBlockNum() (uint64, error) {
+func (rpc Client) GetCurrentBlockNum() (uint64, error) {
 	num, err := rpc.rpcImpl.EthBlockNumber()
 	return uint64(num), err
 }
 
-func (rpc EthBlockChainRPC) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {
+func (rpc Client) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {
 	logs, err := rpc.rpcImpl.EthGetFilterChanges(filterId)
 	if err != nil {
 		utils.Warnf("eth_getfilterchanges: failed to retrieve filter changes: %v", err)
@@ -83,7 +98,7 @@ func (rpc EthBlockChainRPC) GetFilterChanges(filterId string) ([]blockchain.IRec
 	return result, err
 }
 
-func (rpc EthBlockChainRPC) GetLogs(
+func (rpc Client) GetLogs(
 	fromBlockNum, toBlockNum uint64,
 	addresses []string,
 	topics []string,
@@ -115,7 +130,7 @@ func (rpc EthBlockChainRPC) GetLogs(
 	return result, err
 }
 
-func (rpc EthBlockChainRPC) GetTransactionReceipt(txHash string) (blockchain.TransactionReceipt, error) {
+func (rpc Client) GetTransactionReceipt(txHash string) (blockchain.TransactionReceipt, error) {
 	receipt, err := rpc.rpcImpl.EthGetTransactionReceipt(txHash)
 	if err != nil {
 		return nil, err
