@@ -74,23 +74,23 @@ type TransferEvent struct {
 }
 
 func extractERC20TransfersIfExist(r *structs.RemovableTxAndReceipt) (rst []TransferEvent) {
-	transferEventSig := "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	// transferEventSig := "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
-	// todo a little weird
-	if receipt, ok := r.Receipt.(*blockchain.EthereumTransactionReceipt); ok {
-		for _, log := range receipt.Logs {
-			if len(log.Topics) != 3 || log.Topics[0] != transferEventSig {
-				continue
-			}
+	// // todo a little weird
+	// if receipt, ok := r.Receipt.(*blockchain.EthereumTransactionReceipt); ok {
+	// 	for _, log := range receipt.Logs {
+	// 		if len(log.Topics) != 3 || log.Topics[0] != transferEventSig {
+	// 			continue
+	// 		}
 
-			from := log.Topics[1]
-			to := log.Topics[2]
+	// 		from := log.Topics[1]
+	// 		to := log.Topics[2]
 
-			if amount, ok := HexToDecimal(log.Data); ok {
-				rst = append(rst, TransferEvent{log.Address, from, to, amount})
-			}
-		}
-	}
+	// 		if amount, ok := HexToDecimal(log.Data); ok {
+	// 			rst = append(rst, TransferEvent{log.Address, from, to, amount})
+	// 		}
+	// 	}
+	// }
 
 	return
 }

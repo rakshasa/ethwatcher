@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/onrik/ethrpc"
 	"github.com/rakshasa/ethwatcher/blockchain"
 )
 
@@ -14,7 +13,7 @@ type EthBlockChainRPCWithRetry struct {
 }
 
 // TODO: Add retry interval.
-func NewEthRPCWithRetry(api string, maxRetries uint, options ...func(rpc *ethrpc.EthRPC)) *EthBlockChainRPCWithRetry {
+func NewEthRPCWithRetry(api string, maxRetries uint) *EthBlockChainRPCWithRetry {
 	rpc, _ := Dial(api)
 
 	return &EthBlockChainRPCWithRetry{
