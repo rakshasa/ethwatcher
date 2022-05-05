@@ -1,10 +1,14 @@
 FROM golang:1.17
 
-WORKDIR /go/src
+WORKDIR /go/src/github.com/rakshasa/ethwatcher
 
 ENV GOCACHE="${GOPATH}/cache"
 
-COPY . /go/src 
+COPY go.mod go.sum ./
+
+RUN --mount=type=cache,target=/go/cache go get ./...
+
+COPY . ./
 
 RUN --mount=type=cache,target=/go/cache go test ./...
 RUN --mount=type=cache,target=/go/cache go build -o bin/ethereum-watcher cli/main.go
