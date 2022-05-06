@@ -5,11 +5,11 @@ import (
 )
 
 type RemovableBlock struct {
-	blockchain.Block
+	*blockchain.Block
 	IsRemoved bool
 }
 
-func NewRemovableBlock(block blockchain.Block, isRemoved bool) *RemovableBlock {
+func NewRemovableBlock(block *blockchain.Block, isRemoved bool) *RemovableBlock {
 	return &RemovableBlock{
 		block,
 		isRemoved,

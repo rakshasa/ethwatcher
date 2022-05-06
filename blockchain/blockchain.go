@@ -15,20 +15,11 @@ type BlockChain interface {
 	GetTokenAllowance(tokenAddress, proxyAddress, address string) decimal.Decimal
 
 	GetBlockNumber() (uint64, error)
-	GetBlockByNumber(blockNumber uint64) (Block, error)
+	GetBlockByNumber(blockNumber uint64) (*Block, error)
 
 	GetTransaction(ID string) (Transaction, error)
 	GetTransactionReceipt(ID string) (TransactionReceipt, error)
 	GetTransactionAndReceipt(ID string) (Transaction, TransactionReceipt, error)
-}
-
-type Block interface {
-	Number() uint64
-	Timestamp() uint64
-	GetTransactions() []Transaction
-
-	Hash() string
-	ParentHash() string
 }
 
 type Transaction interface {
@@ -67,39 +58,6 @@ type IReceiptLog interface {
 
 // compile time interface check
 var _ BlockChain = &Ethereum{}
-
-type EthereumBlock struct {
-	block *ethtypes.Block
-}
-
-func (block *EthereumBlock) Hash() string {
-	return block.block.Hash().String()
-}
-
-func (block *EthereumBlock) ParentHash() string {
-	return block.block.ParentHash().String()
-}
-
-func (block *EthereumBlock) GetTransactions() []Transaction {
-	return nil
-
-	// txs := make([]Transaction, 0, 20)
-
-	// for i := range block.Block.Transactions {
-	// 	tx := block.Block.Transactions[i]
-	// 	txs = append(txs, &EthereumTransaction{&tx})
-	// }
-
-	// return txs
-}
-
-func (block *EthereumBlock) Number() uint64 {
-	return block.block.NumberU64()
-}
-
-func (block *EthereumBlock) Timestamp() uint64 {
-	return block.block.Time()
-}
 
 type EthereumTransaction struct {
 	*ethtypes.Transaction
@@ -234,7 +192,7 @@ func (e *Ethereum) EnableDebug(b bool) {
 	// e.client.Debug = b
 }
 
-func (e *Ethereum) GetBlockByNumber(number uint64) (Block, error) {
+func (e *Ethereum) GetBlockByNumber(number uint64) (*Block, error) {
 	return nil, fmt.Errorf("not implemented")
 
 	// block, err := e.client.EthGetBlockByNumber(int(number), true)

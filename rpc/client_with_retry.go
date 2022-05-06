@@ -25,22 +25,9 @@ func (rpc *clientWithRetry) NewFilter(addresses []string, topics [][]string) (fi
 	return
 }
 
-func (rpc *clientWithRetry) GetBlockByNum(num uint64) (rst blockchain.Block, err error) {
+func (rpc *clientWithRetry) BlockByNumWithoutTx(ctx context.Context, blockNum uint64) (block *blockchain.Block, err error) {
 	for i := uint(0); i <= rpc.maxRetries; i++ {
-		rst, err = rpc.client.GetBlockByNum(num)
-		if err == nil {
-			break
-		}
-
-		time.Sleep(time.Duration(500*(i+1)) * time.Millisecond)
-	}
-
-	return
-}
-
-func (rpc *clientWithRetry) GetBlockByNumWithoutTx(num uint64) (rst blockchain.Block, err error) {
-	for i := uint(0); i <= rpc.maxRetries; i++ {
-		rst, err = rpc.client.GetBlockByNumWithoutTx(num)
+		block, err = rpc.client.BlockByNumWithoutTx(ctx, blockNum)
 		if err == nil {
 			break
 		}
@@ -54,6 +41,19 @@ func (rpc *clientWithRetry) GetBlockByNumWithoutTx(num uint64) (rst blockchain.B
 func (rpc *clientWithRetry) BlockNumber(ctx context.Context) (result uint64, err error) {
 	for i := uint(0); i <= rpc.maxRetries; i++ {
 		result, err = rpc.client.BlockNumber(ctx)
+		if err == nil {
+			break
+		}
+
+		time.Sleep(time.Duration(500*(i+1)) * time.Millisecond)
+	}
+
+	return
+}
+
+func (rpc *clientWithRetry) GetBlockByNum(num uint64) (rst *blockchain.Block, err error) {
+	for i := uint(0); i <= rpc.maxRetries; i++ {
+		rst, err = rpc.client.GetBlockByNum(num)
 		if err == nil {
 			break
 		}

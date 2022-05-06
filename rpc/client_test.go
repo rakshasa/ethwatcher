@@ -2,46 +2,62 @@ package rpc
 
 import (
 	"context"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	ethereumRPCEndpoint = "https://mainnet.infura.io/v3/"
-	minBlockNumber      = uint64(14724100)
-	maxBlockNumber      = minBlockNumber + 10000000
-)
-
 func TestClient(t *testing.T) {
-	client, err := Dial(ethereumRPCEndpoint)
-	if !t.NoError(err) {
+	skipRpcTests := os.Getenv("SKIP_RPC_TESTS")
+	if skipRpcTests == "yes" {
 		return
 	}
 
-	type testData struct {
-		name string
-		fn   func() error
+	rpcEndpoint := os.Getenv("ETHEREUM_RPC_ENDPOINT")
+	if !assert.NotEmpty(t, rpcEndpoint, "missing ETHEREUM_RPC_ENDPOINT environment variable") {
+		return
 	}
 
-	tests := []testData{
-		{
-			"BlockNumber",
-			func(assert *assert.Assertions) {
-				v, err := client.BlockNumber(context.Background())
-				if !assert.NoError(err) {
-					return
-				}
-				if !assert.Greater(v, minBlockNumber) || !assert.Less(v, maxBlockNumber) {
-					return
-				}
-			},
+	client, err := Dial(rpcEndpoint)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	minBlockNumber := uint64(14724100)
+	maxBlockNumber := minBlockNumber + 10000000
+	testBlockNumber := uint64(14724302)
+
+	tests := map[string]func(context.Context, *assert.Assertions){
+		"BlockNumber": func(ctx context.Context, assert *assert.Assertions) {
+			v, err := client.BlockNumber(ctx)
+			if !assert.NoError(err) {
+				return
+			}
+
+			assert.Less(minBlockNumber, v)
+			assert.Greater(maxBlockNumber, v)
+		},
+		"GetBlockByNumWithoutTx": func(ctx context.Context, assert *assert.Assertions) {
+			v, err := client.BlockByNumWithoutTx(ctx, testBlockNumber)
+			if !assert.NoError(err) {
+				return
+			}
+
+			assert.Equal("0xed324400ca83f5ecd257fd6e2626e87fe5cb641040b978fd6c7dd90b051d817c", v.Hash())
+			assert.Equal("0x6da27232a35dce5ecc5659f95930b295054873794dc6f17a153d059880c7e8da", v.ParentHash())
+			assert.Equal(testBlockNumber, v.Number())
+			assert.Equal(uint64(0x62753d34), v.TimeUint64())
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(st *testing.T) {
-			test.fn(assert.New(st))
+	for name, fn := range tests {
+		t.Run(name, func(st *testing.T) {
+			ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancelFn()
+
+			fn(ctx, assert.New(st))
 		})
 	}
 }

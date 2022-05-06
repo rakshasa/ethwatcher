@@ -2,11 +2,16 @@ FROM golang:1.17
 
 WORKDIR /go/src/github.com/rakshasa/ethwatcher
 
+ARG ETHEREUM_RPC_ENDPOINT
+ARG SKIP_RPC_TESTS
+
 ENV GOCACHE="${GOPATH}/cache"
+ENV ETHEREUM_RPC_ENDPOINT="${ETHEREUM_RPC_ENDPOINT}"
+ENV SKIP_RPC_TESTS="${SKIP_RPC_TESTS}"
 
 COPY go.mod go.sum ./
 
-RUN --mount=type=cache,target=/go/cache go get ./...
+RUN --mount=type=cache,target=/go/cache go mod download
 
 COPY . ./
 

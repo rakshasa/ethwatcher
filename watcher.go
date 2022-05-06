@@ -342,7 +342,7 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 
 			sig.WaitPermission()
 
-			sig.rst = structs.NewRemovableTxAndReceipt(tx, txReceipt, false, block.Timestamp())
+			sig.rst = structs.NewRemovableTxAndReceipt(tx, txReceipt, false, uint64(block.Time().Unix()))
 
 			sig.Done()
 		}()
@@ -385,12 +385,12 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 
 				utils.Debugf("bigStep, doing request, range: %d -> %d (minus: %d)", fromBlock, toBlock, block.Number()-watcher.ReceiptCatchUpFromBlock)
 
-				for k, v := range queryMap {
-					err := watcher.fetchReceiptLogs(false, block, fromBlock, toBlock, k, v)
-					if err != nil {
-						return err
-					}
-				}
+				// for k, v := range queryMap {
+				// 	err := watcher.fetchReceiptLogs(false, block, fromBlock, toBlock, k, v)
+				// 	if err != nil {
+				// 		return err
+				// 	}
+				// }
 
 				// update catch up block
 				watcher.ReceiptCatchUpFromBlock = block.Number() + 1
@@ -405,12 +405,12 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 			watcher.ReceiptCatchUpFromBlock = 0
 		}
 
-		for k, v := range queryMap {
-			err := watcher.fetchReceiptLogs(block.IsRemoved, block, block.Number(), block.Number(), k, v)
-			if err != nil {
-				return err
-			}
-		}
+		// for k, v := range queryMap {
+		// 	err := watcher.fetchReceiptLogs(block.IsRemoved, block, block.Number(), block.Number(), k, v)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// }
 	}
 
 	// clean synced data
@@ -517,21 +517,21 @@ func (watcher *AbstractWatcher) popBlocksUntilReachMainChain() error {
 					fmt.Printf("removing tail txAndReceipt: %+v", tail.Value)
 					tuple := watcher.SyncedTxAndReceipts.Remove(tail).(*structs.TxAndReceipt)
 
-					watcher.NewTxAndReceiptChan <- structs.NewRemovableTxAndReceipt(tuple.Tx, tuple.Receipt, true, block.Timestamp())
+					watcher.NewTxAndReceiptChan <- structs.NewRemovableTxAndReceipt(tuple.Tx, tuple.Receipt, true, uint64(block.Time().Unix()))
 				} else {
 					fmt.Printf("all txAndReceipts removed for block: %+v", removedBlock)
 					break
 				}
 			}
 
-			watcher.NewBlockChan <- structs.NewRemovableBlock(removedBlock, true)
+			// watcher.NewBlockChan <- structs.NewRemovableBlock(removedBlock, true)
 		} else {
 			return nil
 		}
 	}
 }
 
-func (watcher *AbstractWatcher) FoundFork(newBlock blockchain.Block) bool {
+func (watcher *AbstractWatcher) FoundFork(newBlock *blockchain.Block) bool {
 	for e := watcher.SyncedBlocks.Back(); e != nil; e = e.Prev() {
 		syncedBlock := e.Value.(blockchain.Block)
 

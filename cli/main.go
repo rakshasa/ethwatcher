@@ -94,14 +94,11 @@ var usdtTransferCMD = &cobra.Command{
 			return nil
 		}
 
-		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
-			api,
-			[]string{usdtContractAdx},
-			[][]string{topicsInterestedIn},
-			handler,
+		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(api, handler,
 			ethwatcher.WithRPCMaxRetries(3),
 		)
 
+		receiptLogWatcher.SetFilter([]string{usdtContractAdx}, [][]string{topicsInterestedIn})
 		receiptLogWatcher.Run(cmd.Context())
 	},
 }
@@ -130,14 +127,11 @@ var contractEventListenerCMD = &cobra.Command{
 			return nil
 		}
 
-		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(
-			api,
-			[]string{contractAdx},
-			[][]string{eventSigs},
-			handler,
+		receiptLogWatcher := ethwatcher.NewReceiptLogWatcher(api, handler,
 			ethwatcher.WithRPCMaxRetries(3),
 		)
 
+		receiptLogWatcher.SetFilter([]string{contractAdx}, [][]string{eventSigs})
 		receiptLogWatcher.Run(cmd.Context())
 	},
 }

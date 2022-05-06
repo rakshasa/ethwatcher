@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rakshasa/ethwatcher/blockchain"
@@ -31,7 +32,20 @@ func (rpc *client) NewFilter(addresses []string, topics [][]string) (string, err
 	// return filterId, err
 }
 
-func (rpc *client) GetBlockByNum(num uint64) (blockchain.Block, error) {
+func (rpc *client) BlockByNumWithoutTx(ctx context.Context, blockNum uint64) (*blockchain.Block, error) {
+	block, err := rpc.client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return nil, fmt.Errorf("rpc request failed")
+	}
+
+	return blockchain.NewBlock(block), nil
+}
+
+func (rpc *client) BlockNumber(ctx context.Context) (uint64, error) {
+	return rpc.client.BlockNumber(ctx)
+}
+
+func (rpc *client) GetBlockByNum(num uint64) (*blockchain.Block, error) {
 	return nil, fmt.Errorf("not implemented")
 
 	// b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), true)
@@ -43,24 +57,6 @@ func (rpc *client) GetBlockByNum(num uint64) (blockchain.Block, error) {
 	// }
 
 	// return &blockchain.EthereumBlock{b}, err
-}
-
-func (rpc *client) GetBlockByNumWithoutTx(num uint64) (blockchain.Block, error) {
-	return nil, fmt.Errorf("not implemented")
-
-	// b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), false)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if b == nil {
-	// 	return nil, errors.New("nil block")
-	// }
-
-	// return &blockchain.EthereumBlock{b}, err
-}
-
-func (rpc *client) BlockNumber(ctx context.Context) (uint64, error) {
-	return rpc.client.BlockNumber(ctx)
 }
 
 func (rpc *client) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {

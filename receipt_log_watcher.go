@@ -53,13 +53,7 @@ func WithUseFilter(use bool) func(*receiptLogWatcherConfig) {
 	}
 }
 
-func NewReceiptLogWatcher(
-	api string,
-	contractAddresses []string,
-	interestedTopics [][]string,
-	handler func(receiptLogs []blockchain.IReceiptLog) error,
-	options ...func(*receiptLogWatcherConfig),
-) *ReceiptLogWatcher {
+func NewReceiptLogWatcher(api string, handler func(receiptLogs []blockchain.IReceiptLog) error, options ...func(*receiptLogWatcherConfig)) *ReceiptLogWatcher {
 	config := receiptLogWatcherConfig{
 		blockStepSize:   50,
 		pollingInterval: 5 * time.Second,
@@ -73,11 +67,16 @@ func NewReceiptLogWatcher(
 
 	return &ReceiptLogWatcher{
 		api:               api,
-		contractAddresses: contractAddresses,
-		interestedTopics:  interestedTopics,
+		contractAddresses: []string{},
+		interestedTopics:  [][]string{},
 		handler:           handler,
 		config:            config,
 	}
+}
+
+func (w *ReceiptLogWatcher) SetFilter(contractAddresses []string, interestedTopics [][]string) {
+	w.contractAddresses = contractAddresses
+	w.interestedTopics = interestedTopics
 }
 
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
