@@ -11,6 +11,7 @@ dependencies=(
   "github.com/sirupsen/logrus@latest"
   "github.com/shopspring/decimal@latest"
   "github.com/spf13/cobra@latest"
+  "github.com/stretchr/testify/assert@v1.7.0"
   "golang.org/x/crypto@latest"
 )
 

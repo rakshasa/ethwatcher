@@ -1,6 +1,8 @@
-# ethereum-watcher
+# Ethwatcher Go Library
 
-![](https://github.com/HydroProtocol/ethereum-watcher/workflows/Go/badge.svg)
+![](https://github.com/rakshasa/ethwatcher/workflows/Go/badge.svg)
+
+**This is a forked and refactored version of the https://github.com/HydroProtocol/ethereum-watcher library, and the documentation is not up to date.**
 
 ethereum-watcher is an event listener for the [Ethereum Blockchain](https://ethereum.org/) written in Golang. With ethereum-watcher you can monitor and track current or historic events that occur on the Ethereum Blockchain.
 
@@ -23,7 +25,7 @@ Many applications that interact with the Ethereum Blockchain need to know when s
 
 # Installation
 
-Run `go get github.com/HydroProtocol/ethereum-watcher`
+Run `go get github.com/rakshasa/ethwatcher`
 
 ## Sample Commands
 
@@ -147,8 +149,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/HydroProtocol/ethereum-watcher/plugin"
-	"github.com/HydroProtocol/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/structs"
 )
 
 func main() {
@@ -172,8 +174,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/HydroProtocol/ethereum-watcher/plugin"
-	"github.com/HydroProtocol/ethereum-watcher/structs"
+	"github.com/rakshasa/ethwatcher/plugin"
+	"github.com/rakshasa/ethwatcher/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -209,7 +211,7 @@ package main
 
 import (
 	"context"
-	"github.com/HydroProtocol/ethereum-watcher/blockchain"
+	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/sirupsen/logrus"
 )
 

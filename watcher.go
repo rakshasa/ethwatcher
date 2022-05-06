@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 )
 
 type AbstractWatcher struct {
-	rpc rpc.IBlockChainRPC
+	rpcClient rpc.Client
 
 	lock sync.RWMutex
 
@@ -39,10 +40,14 @@ type AbstractWatcher struct {
 }
 
 func NewHttpBasedEthWatcher(api string) *AbstractWatcher {
-	rpc := rpc.NewEthRPCWithRetry(api, 5)
+	rpcClient, err := rpc.DialWithRetry(api, 5)
+	if err != nil {
+		utils.Fatalf("failed to create rpc client: %v", err)
+		os.Exit(1)
+	}
 
 	return &AbstractWatcher{
-		rpc:                     rpc,
+		rpcClient:               rpcClient,
 		NewBlockChan:            make(chan *structs.RemovableBlock, 32),
 		NewTxAndReceiptChan:     make(chan *structs.RemovableTxAndReceipt, 518),
 		NewReceiptLogChan:       make(chan *structs.RemovableReceiptLog, 518),
@@ -167,9 +172,9 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 	for {
 		utils.Debugf("ethereum watcher handling events...")
 
-		latestBlockNum, err := watcher.rpc.BlockNumber(ctx)
+		latestBlockNum, err := watcher.rpcClient.BlockNumber(ctx)
 		if err != nil {
-			return fmt.Errorf("rpc.GetCurrentBlockNum: %w", err)
+			return fmt.Errorf("rpcClient.GetCurrentBlockNum: %w", err)
 		}
 
 		if startBlockNum <= 0 {
@@ -210,9 +215,9 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 
 				utils.Debugf("newBlockNumToSync:", newBlockNumToSync)
 
-				newBlock, err := watcher.rpc.GetBlockByNum(newBlockNumToSync)
+				newBlock, err := watcher.rpcClient.GetBlockByNum(newBlockNumToSync)
 				if err != nil {
-					return fmt.Errorf("rpc.GetBlockByNum: %w", err)
+					return fmt.Errorf("rpcClient.GetBlockByNum: %w", err)
 				}
 
 				if newBlock == nil {
@@ -325,7 +330,7 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 		signals = append(signals, sig)
 
 		go func() {
-			txReceipt, err := watcher.rpc.GetTransactionReceipt(tx.GetHash())
+			txReceipt, err := watcher.rpcClient.GetTransactionReceipt(tx.GetHash())
 
 			if err != nil {
 				fmt.Printf("GetTransactionReceipt fail, err: %s", err)
@@ -433,7 +438,7 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 }
 
 func (watcher *AbstractWatcher) fetchReceiptLogs(isRemoved bool, block blockchain.Block, from, to uint64, address string, topics []string) error {
-	receiptLogs, err := watcher.rpc.GetLogs(from, to, []string{address}, [][]string{topics})
+	receiptLogs, err := watcher.rpcClient.GetLogs(from, to, []string{address}, [][]string{topics})
 	if err != nil {
 		return err
 	}
@@ -494,7 +499,8 @@ func (watcher *AbstractWatcher) popBlocksUntilReachMainChain() error {
 
 		// NOTE: instead of watcher.LatestSyncedBlockNum() cuz it has lock
 		lastSyncedBlock := watcher.SyncedBlocks.Back().Value.(blockchain.Block)
-		block, err := watcher.rpc.GetBlockByNum(lastSyncedBlock.Number())
+
+		block, err := watcher.rpcClient.GetBlockByNum(lastSyncedBlock.Number())
 		if err != nil {
 			return err
 		}

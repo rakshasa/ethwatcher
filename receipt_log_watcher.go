@@ -92,9 +92,11 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 		return fmt.Errorf("invalid RPCMaxRetries value")
 	}
 
-	rpc := rpc.NewEthRPCWithRetry(w.api, uint(w.config.rpcMaxRetries))
+	rpc, err := rpc.DialContextWithRetry(ctx, w.api, uint(w.config.rpcMaxRetries))
+	if err != nil {
+		return fmt.Errorf("failed to dial ethereum rpc node: %v", err)
+	}
 
-	var err error
 	var filterId string
 	var prevBlockNum, nextBlockNum uint64
 

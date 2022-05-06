@@ -53,6 +53,12 @@ func Errorf(format string, v ...interface{}) {
 	}
 }
 
+func Fatalf(format string, v ...interface{}) {
+	if logLevel >= logrus.FatalLevel {
+		logrus.Fatalf(logPrefix+format, v...)
+	}
+}
+
 func Infof(format string, v ...interface{}) {
 	if logLevel >= logrus.InfoLevel {
 		logrus.Infof(logPrefix+format, v...)
