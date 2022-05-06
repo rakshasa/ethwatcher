@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/onrik/ethrpc"
 	"github.com/rakshasa/ethwatcher/blockchain"
 	"github.com/rakshasa/ethwatcher/plugin"
 	"github.com/rakshasa/ethwatcher/rpc"
@@ -39,8 +38,8 @@ type AbstractWatcher struct {
 	wg                      sync.WaitGroup
 }
 
-func NewHttpBasedEthWatcher(api string, options ...func(rpc *ethrpc.EthRPC)) *AbstractWatcher {
-	rpc := rpc.NewEthRPCWithRetry(api, 5, options...)
+func NewHttpBasedEthWatcher(api string) *AbstractWatcher {
+	rpc := rpc.NewEthRPCWithRetry(api, 5)
 
 	return &AbstractWatcher{
 		rpc:                     rpc,

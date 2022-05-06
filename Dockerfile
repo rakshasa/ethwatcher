@@ -19,6 +19,6 @@ FROM alpine
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 RUN --mount=type=cache,target=/var/cache/apt apk add ca-certificates
 
-COPY --from=0 /go/src/bin/* /bin/
+COPY --from=0 /go/src/github.com/rakshasa/ethwatcher/bin/ethereum-watcher /
 
-CMD ["/bin/ethereum-watcher"]
+CMD ["/ethereum-watcher"]

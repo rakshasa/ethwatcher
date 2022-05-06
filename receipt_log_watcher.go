@@ -126,17 +126,15 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 				return err
 			}
 
-			if nextBlockNum < prevBlockNum {
-				return fmt.Errorf("invalid current block number: less than previous received block number")
-			}
+			if nextBlockNum > prevBlockNum {
+				if nextBlockNum-prevBlockNum > uint64(w.config.blockStepSize) {
+					nextBlockNum = prevBlockNum + uint64(w.config.blockStepSize)
+				}
 
-			if nextBlockNum-prevBlockNum > uint64(w.config.blockStepSize) {
-				nextBlockNum = prevBlockNum + uint64(w.config.blockStepSize)
-			}
-
-			logs, err = rpc.GetLogs(prevBlockNum, nextBlockNum, w.contractAddresses, w.interestedTopics)
-			if err != nil {
-				return err
+				logs, err = rpc.GetLogs(prevBlockNum+1, nextBlockNum, w.contractAddresses, w.interestedTopics)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
