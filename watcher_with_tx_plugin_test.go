@@ -1,32 +1,23 @@
 package ethwatcher
 
-import (
-	"context"
-	"testing"
+// func TestTxHashPlugin(t *testing.T) {
+// 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
+// 	w := NewHttpBasedEthWatcher(api)
 
-	"github.com/rakshasa/ethwatcher/plugin"
-	"github.com/rakshasa/ethwatcher/structs"
-	"github.com/rakshasa/ethwatcher/utils"
-)
+// 	w.RegisterTxPlugin(plugin.NewTxHashPlugin(func(txHash string, isRemoved bool) {
+// 		utils.Printf("%s >> %s", txHash, isRemoved)
+// 	}))
 
-func TestTxHashPlugin(t *testing.T) {
-	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(api)
+// 	w.RunTillExit(context.Background())
+// }
 
-	w.RegisterTxPlugin(plugin.NewTxHashPlugin(func(txHash string, isRemoved bool) {
-		utils.Printf("%s >> %s", txHash, isRemoved)
-	}))
+// func TestTxPlugin(t *testing.T) {
+// 	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
+// 	w := NewHttpBasedEthWatcher(api)
 
-	w.RunTillExit(context.Background())
-}
+// 	w.RegisterTxPlugin(plugin.NewTxPlugin(func(tx structs.RemovableTx) {
+// 		utils.Printf(">> block: %d, txHash: %s", tx.GetBlockNumber(), tx.GetHash())
+// 	}))
 
-func TestTxPlugin(t *testing.T) {
-	api := "https://mainnet.infura.io/v3/19d753b2600445e292d54b1ef58d4df4"
-	w := NewHttpBasedEthWatcher(api)
-
-	w.RegisterTxPlugin(plugin.NewTxPlugin(func(tx structs.RemovableTx) {
-		utils.Printf(">> block: %d, txHash: %s", tx.GetBlockNumber(), tx.GetHash())
-	}))
-
-	w.RunTillExit(context.Background())
-}
+// 	w.RunTillExit(context.Background())
+// }

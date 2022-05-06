@@ -102,15 +102,15 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 			}
 
 			// run thru tx plugins
-			txPlugins := watcher.TxPlugins
-			for i := 0; i < len(txPlugins); i++ {
-				txPlugin := txPlugins[i]
+			// txPlugins := watcher.TxPlugins
+			// for i := 0; i < len(txPlugins); i++ {
+			// 	txPlugin := txPlugins[i]
 
-				for j := 0; j < len(block.GetTransactions()); j++ {
-					tx := structs.NewRemovableTx(block.GetTransactions()[j], false)
-					txPlugin.AcceptTx(tx)
-				}
-			}
+			// 	for j := 0; j < len(block.GetTransactions()); j++ {
+			// 		tx := structs.NewRemovableTx(block.GetTransactions()[j], false)
+			// 		txPlugin.AcceptTx(tx)
+			// 	}
+			// }
 		}
 
 		utils.Debugf("ethereum watcher done waiting for new blocks")
@@ -215,7 +215,7 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 
 				utils.Debugf("newBlockNumToSync:", newBlockNumToSync)
 
-				newBlock, err := watcher.rpcClient.GetBlockByNum(newBlockNumToSync)
+				newBlock, err := watcher.rpcClient.BlockByNumber(ctx, newBlockNumToSync)
 				if err != nil {
 					return fmt.Errorf("rpcClient.GetBlockByNum: %w", err)
 				}
@@ -310,129 +310,129 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 	watcher.lock.Lock()
 	defer watcher.lock.Unlock()
 
-	skippedTxReceiptCount := 0
+	// skippedTxReceiptCount := 0
 
 	// get tx receipts in block, which is time consuming
-	signals := make([]*SyncSignal, 0, len(block.GetTransactions()))
-	for i := 0; i < len(block.GetTransactions()); i++ {
-		tx := block.GetTransactions()[i]
+	// signals := make([]*SyncSignal, 0, len(block.GetTransactions()))
+	// for i := 0; i < len(block.GetTransactions()); i++ {
+	// 	tx := block.GetTransactions()[i]
 
-		if !watcher.needReceipt(tx) {
-			skippedTxReceiptCount++
-			continue
-		}
+	// 	if !watcher.needReceipt(tx) {
+	// 		skippedTxReceiptCount++
+	// 		continue
+	// 	}
 
-		utils.Debugf("needReceipt of tx: %s in block: %d", tx.GetHash(), block.Number())
+	// 	utils.Debugf("needReceipt of tx: %s in block: %d", tx.GetHash(), block.Number())
 
-		syncSigName := fmt.Sprintf("B:%d T:%s", block.Number(), tx.GetHash())
+	// 	syncSigName := fmt.Sprintf("B:%d T:%s", block.Number(), tx.GetHash())
 
-		sig := newSyncSignal(syncSigName)
-		signals = append(signals, sig)
+	// 	sig := newSyncSignal(syncSigName)
+	// 	signals = append(signals, sig)
 
-		go func() {
-			txReceipt, err := watcher.rpcClient.GetTransactionReceipt(tx.GetHash())
+	// 	go func() {
+	// 		txReceipt, err := watcher.rpcClient.GetTransactionReceipt(tx.GetHash())
 
-			if err != nil {
-				fmt.Printf("GetTransactionReceipt fail, err: %s", err)
-				sig.err = err
+	// 		if err != nil {
+	// 			fmt.Printf("GetTransactionReceipt fail, err: %s", err)
+	// 			sig.err = err
 
-				// one fails all
-				return
-			}
+	// 			// one fails all
+	// 			return
+	// 		}
 
-			sig.WaitPermission()
+	// 		sig.WaitPermission()
 
-			sig.rst = structs.NewRemovableTxAndReceipt(tx, txReceipt, false, uint64(block.Time().Unix()))
+	// 		sig.rst = structs.NewRemovableTxAndReceipt(tx, txReceipt, false, uint64(block.Time().Unix()))
 
-			sig.Done()
-		}()
-	}
+	// 		sig.Done()
+	// 	}()
+	// }
 
-	for i := 0; i < len(signals); i++ {
-		sig := signals[i]
-		sig.Permit()
-		sig.WaitDone()
+	// for i := 0; i < len(signals); i++ {
+	// 	sig := signals[i]
+	// 	sig.Permit()
+	// 	sig.WaitDone()
 
-		if sig.err != nil {
-			return sig.err
-		}
-	}
+	// 	if sig.err != nil {
+	// 		return sig.err
+	// 	}
+	// }
 
-	if skippedTxReceiptCount != 0 {
-		utils.Debugf("skipped transaction receipt count: %d", skippedTxReceiptCount)
-	}
+	// if skippedTxReceiptCount != 0 {
+	// 	utils.Debugf("skipped transaction receipt count: %d", skippedTxReceiptCount)
+	// }
 
-	for i := 0; i < len(signals); i++ {
-		watcher.SyncedTxAndReceipts.PushBack(signals[i].rst.TxAndReceipt)
-		watcher.NewTxAndReceiptChan <- signals[i].rst
-	}
+	// for i := 0; i < len(signals); i++ {
+	// 	watcher.SyncedTxAndReceipts.PushBack(signals[i].rst.TxAndReceipt)
+	// 	watcher.NewTxAndReceiptChan <- signals[i].rst
+	// }
 
-	queryMap := watcher.getReceiptLogQueryMap()
-	utils.Debugf("getReceiptLogQueryMap:", queryMap)
+	// queryMap := watcher.getReceiptLogQueryMap()
+	// utils.Debugf("getReceiptLogQueryMap:", queryMap)
 
-	bigStep := uint64(50)
-	if curHighestBlockNum-block.Number() > bigStep {
-		// only do request with bigStep
-		if watcher.ReceiptCatchUpFromBlock == 0 {
-			// init
-			utils.Debugf("bigStep, init to %d", block.Number())
-			watcher.ReceiptCatchUpFromBlock = block.Number()
-		} else {
-			// check if we need do requests
-			if (block.Number() - watcher.ReceiptCatchUpFromBlock + 1) == bigStep {
-				fromBlock := watcher.ReceiptCatchUpFromBlock
-				toBlock := block.Number()
+	// bigStep := uint64(50)
+	// if curHighestBlockNum-block.Number() > bigStep {
+	// 	// only do request with bigStep
+	// 	if watcher.ReceiptCatchUpFromBlock == 0 {
+	// 		// init
+	// 		utils.Debugf("bigStep, init to %d", block.Number())
+	// 		watcher.ReceiptCatchUpFromBlock = block.Number()
+	// 	} else {
+	// 		// check if we need do requests
+	// 		if (block.Number() - watcher.ReceiptCatchUpFromBlock + 1) == bigStep {
+	// 			fromBlock := watcher.ReceiptCatchUpFromBlock
+	// 			toBlock := block.Number()
 
-				utils.Debugf("bigStep, doing request, range: %d -> %d (minus: %d)", fromBlock, toBlock, block.Number()-watcher.ReceiptCatchUpFromBlock)
+	// 			utils.Debugf("bigStep, doing request, range: %d -> %d (minus: %d)", fromBlock, toBlock, block.Number()-watcher.ReceiptCatchUpFromBlock)
 
-				// for k, v := range queryMap {
-				// 	err := watcher.fetchReceiptLogs(false, block, fromBlock, toBlock, k, v)
-				// 	if err != nil {
-				// 		return err
-				// 	}
-				// }
+	// 			// for k, v := range queryMap {
+	// 			// 	err := watcher.fetchReceiptLogs(false, block, fromBlock, toBlock, k, v)
+	// 			// 	if err != nil {
+	// 			// 		return err
+	// 			// 	}
+	// 			// }
 
-				// update catch up block
-				watcher.ReceiptCatchUpFromBlock = block.Number() + 1
-			} else {
-				utils.Debugf("bigStep, holding %d blocks: %d -> %d", block.Number()-watcher.ReceiptCatchUpFromBlock+1, watcher.ReceiptCatchUpFromBlock, block.Number())
-			}
-		}
-	} else {
-		// reset
-		if watcher.ReceiptCatchUpFromBlock != 0 {
-			utils.Debugf("exit bigStep mode, ReceiptCatchUpFromBlock: %d, curBlock: %d, gap: %d", watcher.ReceiptCatchUpFromBlock, block.Number(), curHighestBlockNum-block.Number())
-			watcher.ReceiptCatchUpFromBlock = 0
-		}
+	// 			// update catch up block
+	// 			watcher.ReceiptCatchUpFromBlock = block.Number() + 1
+	// 		} else {
+	// 			utils.Debugf("bigStep, holding %d blocks: %d -> %d", block.Number()-watcher.ReceiptCatchUpFromBlock+1, watcher.ReceiptCatchUpFromBlock, block.Number())
+	// 		}
+	// 	}
+	// } else {
+	// 	// reset
+	// 	if watcher.ReceiptCatchUpFromBlock != 0 {
+	// 		utils.Debugf("exit bigStep mode, ReceiptCatchUpFromBlock: %d, curBlock: %d, gap: %d", watcher.ReceiptCatchUpFromBlock, block.Number(), curHighestBlockNum-block.Number())
+	// 		watcher.ReceiptCatchUpFromBlock = 0
+	// 	}
 
-		// for k, v := range queryMap {
-		// 	err := watcher.fetchReceiptLogs(block.IsRemoved, block, block.Number(), block.Number(), k, v)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
-	}
+	// 	// for k, v := range queryMap {
+	// 	// 	err := watcher.fetchReceiptLogs(block.IsRemoved, block, block.Number(), block.Number(), k, v)
+	// 	// 	if err != nil {
+	// 	// 		return err
+	// 	// 	}
+	// 	// }
+	// }
 
-	// clean synced data
-	for watcher.SyncedBlocks.Len() >= watcher.MaxSyncedBlockToKeep {
-		// clean block
-		b := watcher.SyncedBlocks.Remove(watcher.SyncedBlocks.Front()).(blockchain.Block)
+	// // clean synced data
+	// for watcher.SyncedBlocks.Len() >= watcher.MaxSyncedBlockToKeep {
+	// 	// clean block
+	// 	b := watcher.SyncedBlocks.Remove(watcher.SyncedBlocks.Front()).(blockchain.Block)
 
-		// clean txAndReceipt
-		for watcher.SyncedTxAndReceipts.Front() != nil {
-			head := watcher.SyncedTxAndReceipts.Front()
+	// 	// clean txAndReceipt
+	// 	for watcher.SyncedTxAndReceipts.Front() != nil {
+	// 		head := watcher.SyncedTxAndReceipts.Front()
 
-			if head.Value.(*structs.TxAndReceipt).Tx.GetBlockNumber() <= b.Number() {
-				watcher.SyncedTxAndReceipts.Remove(head)
-			} else {
-				break
-			}
-		}
-	}
+	// 		if head.Value.(*structs.TxAndReceipt).Tx.GetBlockNumber() <= b.Number() {
+	// 			watcher.SyncedTxAndReceipts.Remove(head)
+	// 		} else {
+	// 			break
+	// 		}
+	// 	}
+	// }
 
-	// block
-	watcher.SyncedBlocks.PushBack(block.Block)
-	watcher.NewBlockChan <- block
+	// // block
+	// watcher.SyncedBlocks.PushBack(block.Block)
+	// watcher.NewBlockChan <- block
 
 	return nil
 }
@@ -500,7 +500,7 @@ func (watcher *AbstractWatcher) popBlocksUntilReachMainChain() error {
 		// NOTE: instead of watcher.LatestSyncedBlockNum() cuz it has lock
 		lastSyncedBlock := watcher.SyncedBlocks.Back().Value.(blockchain.Block)
 
-		block, err := watcher.rpcClient.GetBlockByNum(lastSyncedBlock.Number())
+		block, err := watcher.rpcClient.BlockByNumber(context.TODO(), lastSyncedBlock.Number())
 		if err != nil {
 			return err
 		}

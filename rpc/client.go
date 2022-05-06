@@ -32,8 +32,8 @@ func (rpc *client) NewFilter(addresses []string, topics [][]string) (string, err
 	// return filterId, err
 }
 
-func (rpc *client) BlockByNumWithoutTx(ctx context.Context, blockNum uint64) (*blockchain.Block, error) {
-	block, err := rpc.client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNum))
+func (rpc *client) BlockByNumber(ctx context.Context, blockNumber uint64) (*blockchain.Block, error) {
+	block, err := rpc.client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	if err != nil {
 		return nil, fmt.Errorf("rpc request failed")
 	}
@@ -43,20 +43,6 @@ func (rpc *client) BlockByNumWithoutTx(ctx context.Context, blockNum uint64) (*b
 
 func (rpc *client) BlockNumber(ctx context.Context) (uint64, error) {
 	return rpc.client.BlockNumber(ctx)
-}
-
-func (rpc *client) GetBlockByNum(num uint64) (*blockchain.Block, error) {
-	return nil, fmt.Errorf("not implemented")
-
-	// b, err := rpc.rpcImpl.EthGetBlockByNumber(int(num), true)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if b == nil {
-	// 	return nil, errors.New("nil block")
-	// }
-
-	// return &blockchain.EthereumBlock{b}, err
 }
 
 func (rpc *client) GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error) {

@@ -33,16 +33,3 @@ func (block *Block) Time() time.Time {
 func (block *Block) TimeUint64() uint64 {
 	return block.block.Time()
 }
-
-func (block *Block) GetTransactions() []Transaction {
-	return nil
-
-	// txs := make([]Transaction, 0, 20)
-
-	// for i := range block.Block.Transactions {
-	// 	tx := block.Block.Transactions[i]
-	// 	txs = append(txs, &EthereumTransaction{&tx})
-	// }
-
-	// return txs
-}

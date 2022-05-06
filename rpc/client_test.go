@@ -39,8 +39,8 @@ func TestClient(t *testing.T) {
 			assert.Less(minBlockNumber, v)
 			assert.Greater(maxBlockNumber, v)
 		},
-		"GetBlockByNumWithoutTx": func(ctx context.Context, assert *assert.Assertions) {
-			v, err := client.BlockByNumWithoutTx(ctx, testBlockNumber)
+		"BlockByNumber": func(ctx context.Context, assert *assert.Assertions) {
+			v, err := client.BlockByNumber(ctx, testBlockNumber)
 			if !assert.NoError(err) {
 				return
 			}
