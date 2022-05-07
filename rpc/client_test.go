@@ -50,6 +50,21 @@ func TestClient(t *testing.T) {
 			assert.Equal(testBlockNumber, v.Number())
 			assert.Equal(uint64(0x62753d34), v.TimeUint64())
 		},
+		"FilterLogs": func(ctx context.Context, assert *assert.Assertions) {
+			v, err := client.FilterLogs(
+				ctx,
+				testBlockNumber,
+				testBlockNumber,
+				[]string{"0x118a408ad0bcddf2813b0e396d180548d3c52f91"},
+				[][]string{[]string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}},
+			)
+			if !assert.NoError(err) {
+				return
+			}
+			if !assert.Len(v, 124) {
+				return
+			}
+		},
 	}
 
 	for name, fn := range tests {

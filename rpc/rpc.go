@@ -13,10 +13,9 @@ type Client interface {
 
 	BlockNumber(ctx context.Context) (uint64, error)
 	BlockByNumber(ctx context.Context, blockNumber uint64) (*blockchain.Block, error)
+	FilterLogs(ctx context.Context, fromBlock, toBlock uint64, addresses []string, topics [][]string) ([]blockchain.Log, error)
 
-	GetFilterChanges(filterId string) ([]blockchain.IReceiptLog, error)
-	GetLogs(from, to uint64, address []string, topics [][]string) ([]blockchain.IReceiptLog, error)
-	GetTransactionReceipt(txHash string) (blockchain.TransactionReceipt, error)
+	GetFilterChanges(filterId string) ([]blockchain.Log, error)
 }
 
 func Dial(rawurl string) (Client, error) {

@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"github.com/rakshasa/ethwatcher/structs"
-	"strings"
 )
 
 type IReceiptLogPlugin interface {
@@ -47,21 +46,21 @@ func (p *ReceiptLogPlugin) Accept(receiptLog *structs.RemovableReceiptLog) {
 // simplified version of specifying topic filters
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#a-note-on-specifying-topic-filters
 func (p *ReceiptLogPlugin) NeedReceiptLog(receiptLog *structs.RemovableReceiptLog) bool {
-	contract := receiptLog.GetAddress()
-	if strings.ToLower(p.contract) != strings.ToLower(contract) {
-		return false
-	}
+	// contract := receiptLog.GetAddress()
+	// if strings.ToLower(p.contract) != strings.ToLower(contract) {
+	// 	return false
+	// }
 
-	var firstTopic string
-	if len(receiptLog.GetTopics()) > 0 {
-		firstTopic = receiptLog.GetTopics()[0]
-	}
+	// var firstTopic string
+	// if len(receiptLog.GetTopics()) > 0 {
+	// 	firstTopic = receiptLog.GetTopics()[0]
+	// }
 
-	for _, interestedTopic := range p.topics {
-		if strings.ToLower(firstTopic) == strings.ToLower(interestedTopic) {
-			return true
-		}
-	}
+	// for _, interestedTopic := range p.topics {
+	// 	if strings.ToLower(firstTopic) == strings.ToLower(interestedTopic) {
+	// 		return true
+	// 	}
+	// }
 
 	return false
 }

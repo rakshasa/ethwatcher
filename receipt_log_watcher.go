@@ -18,7 +18,7 @@ type ReceiptLogWatcher struct {
 	api               string
 	contractAddresses []string
 	interestedTopics  [][]string
-	handler           func(receiptLogs []blockchain.IReceiptLog) error
+	handler           func(receiptLogs []blockchain.Log) error
 	config            receiptLogWatcherConfig
 }
 
@@ -53,7 +53,7 @@ func WithUseFilter(use bool) func(*receiptLogWatcherConfig) {
 	}
 }
 
-func NewReceiptLogWatcher(api string, handler func(receiptLogs []blockchain.IReceiptLog) error, options ...func(*receiptLogWatcherConfig)) *ReceiptLogWatcher {
+func NewReceiptLogWatcher(api string, handler func(receiptLogs []blockchain.Log) error, options ...func(*receiptLogWatcherConfig)) *ReceiptLogWatcher {
 	config := receiptLogWatcherConfig{
 		blockStepSize:   50,
 		pollingInterval: 5 * time.Second,
@@ -114,7 +114,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 
 		prevTime := time.Now()
 
-		var logs []blockchain.IReceiptLog
+		var logs []blockchain.Log
 
 		if w.config.useFilter {
 			logs, err = rpc.GetFilterChanges(filterId)
@@ -132,7 +132,7 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 					nextBlockNum = prevBlockNum + uint64(w.config.blockStepSize)
 				}
 
-				logs, err = rpc.GetLogs(prevBlockNum+1, nextBlockNum, w.contractAddresses, w.interestedTopics)
+				logs, err = rpc.FilterLogs(ctx, prevBlockNum+1, nextBlockNum, w.contractAddresses, w.interestedTopics)
 				if err != nil {
 					return err
 				}

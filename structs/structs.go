@@ -28,7 +28,7 @@ type RemovableTxAndReceipt struct {
 }
 
 type RemovableReceiptLog struct {
-	blockchain.IReceiptLog
+	*blockchain.Log
 	IsRemoved bool
 }
 

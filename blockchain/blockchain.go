@@ -41,19 +41,7 @@ type TransactionReceipt interface {
 	GetTxHash() string
 	GetTxIndex() int
 
-	GetLogs() []IReceiptLog
-}
-
-type IReceiptLog interface {
-	GetRemoved() bool
-	GetLogIndex() int
-	GetTransactionIndex() int
-	GetTransactionHash() string
-	GetBlockNum() int
-	GetBlockHash() string
-	GetAddress() string
-	GetData() string
-	GetTopics() []string
+	GetLogs() []Log
 }
 
 // compile time interface check
@@ -96,7 +84,7 @@ type EthereumTransactionReceipt struct {
 	// *ethtypes.TransactionReceipt
 }
 
-func (r *EthereumTransactionReceipt) GetLogs() (rst []IReceiptLog) {
+func (r *EthereumTransactionReceipt) GetLogs() (rst []Log) {
 	// for i := range r.Logs {
 	// 	l := ReceiptLog{&r.Logs[i]}
 	// 	rst = append(rst, l)
@@ -135,52 +123,6 @@ func (r *EthereumTransactionReceipt) GetTxHash() string {
 func (r *EthereumTransactionReceipt) GetTxIndex() int {
 	return 0
 	// return r.TransactionIndex
-}
-
-type ReceiptLog struct {
-	*ethtypes.Log
-}
-
-func (log ReceiptLog) GetRemoved() bool {
-	return log.Removed
-}
-
-func (log ReceiptLog) GetLogIndex() int {
-	return int(log.Index)
-}
-
-func (log ReceiptLog) GetTransactionIndex() int {
-	return int(log.TxIndex)
-}
-
-func (log ReceiptLog) GetTransactionHash() string {
-	return log.TxHash.String()
-}
-
-func (log ReceiptLog) GetBlockNum() int {
-	return int(log.BlockNumber)
-}
-
-func (log ReceiptLog) GetBlockHash() string {
-	return log.BlockHash.String()
-}
-
-func (log ReceiptLog) GetAddress() string {
-	return log.Address.String()
-}
-
-func (log ReceiptLog) GetData() string {
-	return string(log.Data)
-}
-
-func (log ReceiptLog) GetTopics() (topics []string) {
-	topics = make([]string, len(log.Topics))
-
-	for idx, t := range log.Topics {
-		topics[idx] = t.String()
-	}
-
-	return
 }
 
 type Ethereum struct {

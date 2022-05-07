@@ -149,7 +149,7 @@ func (watcher *AbstractWatcher) RunTillExitFromBlock(ctx context.Context, startB
 		utils.Debugf("ethereum watcher started waiting for new receipt logs")
 
 		for removableReceiptLog := range watcher.NewReceiptLogChan {
-			utils.Debugf("get receipt log from chan: %+v, txHash: %s", removableReceiptLog, removableReceiptLog.IReceiptLog.GetTransactionHash())
+			// utils.Debugf("get receipt log from chan: %+v, txHash: %s", removableReceiptLog, removableReceiptLog.IReceiptLog.GetTransactionHash())
 
 			receiptLogsPlugins := watcher.ReceiptLogPlugins
 			for i := 0; i < len(receiptLogsPlugins); i++ {
@@ -438,18 +438,18 @@ func (watcher *AbstractWatcher) addNewBlock(block *structs.RemovableBlock, curHi
 }
 
 func (watcher *AbstractWatcher) fetchReceiptLogs(isRemoved bool, block blockchain.Block, from, to uint64, address string, topics []string) error {
-	receiptLogs, err := watcher.rpcClient.GetLogs(from, to, []string{address}, [][]string{topics})
+	receiptLogs, err := watcher.rpcClient.FilterLogs(context.TODO(), from, to, []string{address}, [][]string{topics})
 	if err != nil {
 		return err
 	}
 
 	for i := 0; i < len(receiptLogs); i++ {
-		log := receiptLogs[i]
-		utils.Debugf("insert into chan: %s", log.GetTransactionHash())
+		// log := receiptLogs[i]
+		// utils.Debugf("insert into chan: %s", log.GetTransactionHash())
 
 		watcher.NewReceiptLogChan <- &structs.RemovableReceiptLog{
-			IReceiptLog: log,
-			IsRemoved:   isRemoved,
+			// IReceiptLog: log,
+			IsRemoved: isRemoved,
 		}
 	}
 
