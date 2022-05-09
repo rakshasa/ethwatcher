@@ -4,6 +4,8 @@
 
 **This is a forked and refactored version of the https://github.com/HydroProtocol/ethereum-watcher library, and the documentation is not up to date.**
 
+**Only ReceiptLogWatcher currently works.**
+
 ethereum-watcher is an event listener for the [Ethereum Blockchain](https://ethereum.org/) written in Golang. With ethereum-watcher you can monitor and track current or historic events that occur on the Ethereum Blockchain.
 
 ## Background

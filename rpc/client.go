@@ -6,8 +6,11 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rakshasa/ethwatcher/blockchain"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 type client struct {
@@ -63,10 +66,39 @@ func (rpc *client) BlockNumber(ctx context.Context) (uint64, error) {
 // {{A}, {B}}         matches topic A in first position AND B in second position
 // {{A, B}, {C, D}}   matches topic (A OR B) in first position AND (C OR D) in second position
 func (rpc *client) FilterLogs(ctx context.Context, fromBlock, toBlock uint64, addresses []string, topics [][]string) ([]blockchain.Log, error) {
+	ethAddresses := make([]common.Address, len(addresses))
+
+	for idx, a := range addresses {
+		if !ethcommon.IsHexAddress(a) {
+			return nil, fmt.Errorf("invalid address argument: %s", a)
+		}
+
+		ethAddresses[idx] = ethcommon.HexToAddress(a)
+	}
+
+	ethTopics := make([][]common.Hash, len(topics))
+
+	for idx1, t1 := range topics {
+		tl := make([]common.Hash, len(t1))
+
+		for idx2, t2 := range t1 {
+			topic, err := blockchain.NewTopicFromHex(t2)
+			if err != nil {
+				return nil, fmt.Errorf("invalid topic: %v", err)
+			}
+
+			tl[idx2] = topic
+		}
+
+		ethTopics[idx1] = tl
+	}
+
 	filterQuery := ethereum.FilterQuery{
 		BlockHash: nil,
 		FromBlock: new(big.Int).SetUint64(fromBlock),
 		ToBlock:   new(big.Int).SetUint64(toBlock),
+		Addresses: ethAddresses,
+		Topics:    ethTopics,
 	}
 
 	logs, err := rpc.client.FilterLogs(ctx, filterQuery)

@@ -2,12 +2,40 @@ package rpc
 
 import (
 	"context"
+	"math/big"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+func newBigList(strs ...string) (list []big.Int) {
+	list = make([]big.Int, len(strs))
+
+	for idx, str := range strs {
+		value, err := utils.NewBigFromHex(str, 8*32)
+		if err != nil {
+			utils.Fatalf("invalid hex string: %s", str)
+			os.Exit(1)
+		}
+
+		list[idx] = *value
+	}
+
+	return
+}
+
+func newBig(str string) *big.Int {
+	value, err := utils.NewBigFromHex(str, 8*32)
+	if err != nil {
+		utils.Fatalf("invalid hex string: %s", str)
+		os.Exit(1)
+	}
+
+	return value
+}
 
 func TestClient(t *testing.T) {
 	skipRpcTests := os.Getenv("SKIP_RPC_TESTS")
@@ -55,15 +83,31 @@ func TestClient(t *testing.T) {
 				ctx,
 				testBlockNumber,
 				testBlockNumber,
-				[]string{"0x118a408ad0bcddf2813b0e396d180548d3c52f91"},
+				[]string{"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"},
 				[][]string{[]string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}},
 			)
 			if !assert.NoError(err) {
 				return
 			}
-			if !assert.Len(v, 124) {
+			if !assert.Len(v, 10) {
 				return
 			}
+
+			assert.Equal(newBig("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"), v[0].AddressAsBig())
+			assert.Equal(
+				newBigList(
+					"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+					"0x000000000000000000000000ee139899eadfbc5c25c7a1c6786d0367c82f7a1e",
+					"0x0000000000000000000000000bf46ba06dc1d33c3bd80ff42497ebff13a88900",
+				), v[0].TopicsAsBig())
+
+			assert.Equal(newBig("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"), v[0].AddressAsBig())
+			assert.Equal(
+				newBigList(
+					"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+					"0x0000000000000000000000008032eaede5c55f744387ca53aaf0499abcd783e5",
+					"0x000000000000000000000000a5e9c917b4b821e4e0a5bbefce078ab6540d6b5e",
+				), v[1].TopicsAsBig())
 		},
 	}
 
