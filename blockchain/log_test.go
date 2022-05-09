@@ -26,6 +26,11 @@ func TestLog(t *testing.T) {
 		Data: data,
 	})
 
+	t0a, ok := v.TopicAtIndexAsHex(0)
+	if assert.True(ok) {
+		assert.Equal("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", t0a)
+	}
+
 	t0ah, ok := v.TopicAtIndexAsAddressHex(0)
 	assert.False(ok)
 	assert.Empty(t0ah)

@@ -80,6 +80,14 @@ func (l *Log) TopicAtIndexAsAddressHex(idx int) (string, bool) {
 	return "0x" + value.Text(16), true
 }
 
+func (l *Log) TopicAtIndexAsHex(idx int) (string, bool) {
+	if idx < 0 || idx >= len(l.Topics) {
+		return "", false
+	}
+
+	return "0x" + l.Topics[idx].Big().Text(16), true
+}
+
 func (l *Log) TopicAtIndexAsUint64(idx int) (uint64, bool) {
 	if idx < 0 || idx >= len(l.Topics) {
 		return uint64(0), false
