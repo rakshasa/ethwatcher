@@ -30,6 +30,8 @@ func (l *Log) AddressAsBig() *big.Int {
 	return new(big.Int).SetBytes(l.Address.Bytes())
 }
 
+// TODO: Change to use a custom type for data.
+
 func (l *Log) DataLen() int {
 	return len(l.Data) / 32
 }
@@ -42,8 +44,17 @@ func (l *Log) DataAtIndexAsBig(idx int) (*big.Int, bool) {
 	return new(big.Int).SetBytes(l.Data[idx*32 : (idx+1)*32]), true
 }
 
-// fromAddress, err := utils.ConvertTopicToAddress(receiptLog.GetTopics()[1])
-// requestId, err := utils.ConvertDataAtIndexToBigUint64(receiptLog.GetData(), 0)
+func (l *Log) DataAtIndexAsUint64(idx int) (uint64, bool) {
+	value, ok := l.DataAtIndexAsBig(idx)
+	if !ok {
+		return uint64(0), false
+	}
+	if !value.IsUint64() {
+		return uint64(0), false
+	}
+
+	return value.Uint64(), true
+}
 
 func (l *Log) TopicsAsBig() []big.Int {
 	results := make([]big.Int, len(l.Topics))
@@ -67,4 +78,18 @@ func (l *Log) TopicAtIndexAsAddressHex(idx int) (string, bool) {
 	}
 
 	return "0x" + value.Text(16), true
+}
+
+func (l *Log) TopicAtIndexAsUint64(idx int) (uint64, bool) {
+	if idx < 0 || idx >= len(l.Topics) {
+		return uint64(0), false
+	}
+
+	value := l.Topics[idx].Big()
+
+	if value.IsUint64() {
+		return uint64(0), false
+	}
+
+	return value.Uint64(), true
 }
