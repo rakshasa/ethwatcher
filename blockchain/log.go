@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/rakshasa/ethwatcher/utils"
@@ -28,6 +29,10 @@ func NewTopicFromHex(str string) (ethcommon.Hash, error) {
 
 func (l *Log) AddressAsBig() *big.Int {
 	return new(big.Int).SetBytes(l.Address.Bytes())
+}
+
+func (l *Log) AddressAsHex() string {
+	return fmt.Sprintf("0x%020x", new(big.Int).SetBytes(l.Address.Bytes()))
 }
 
 // TODO: Change to use a custom type for data.
@@ -77,7 +82,7 @@ func (l *Log) TopicAtIndexAsAddressHex(idx int) (string, bool) {
 		return "", false
 	}
 
-	return "0x" + value.Text(16), true
+	return fmt.Sprintf("0x%020x", l.Topics[idx].Big()), true
 }
 
 func (l *Log) TopicAtIndexAsHex(idx int) (string, bool) {
@@ -85,7 +90,7 @@ func (l *Log) TopicAtIndexAsHex(idx int) (string, bool) {
 		return "", false
 	}
 
-	return "0x" + l.Topics[idx].Big().Text(16), true
+	return fmt.Sprintf("0x%032x", l.Topics[idx].Big()), true
 }
 
 func (l *Log) TopicAtIndexAsUint64(idx int) (uint64, bool) {
