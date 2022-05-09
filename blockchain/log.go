@@ -42,6 +42,9 @@ func (l *Log) DataAtIndexAsBig(idx int) (*big.Int, bool) {
 	return new(big.Int).SetBytes(l.Data[idx*32 : (idx+1)*32]), true
 }
 
+// fromAddress, err := utils.ConvertTopicToAddress(receiptLog.GetTopics()[1])
+// requestId, err := utils.ConvertDataAtIndexToBigUint64(receiptLog.GetData(), 0)
+
 func (l *Log) TopicsAsBig() []big.Int {
 	results := make([]big.Int, len(l.Topics))
 
@@ -50,4 +53,18 @@ func (l *Log) TopicsAsBig() []big.Int {
 	}
 
 	return results
+}
+
+func (l *Log) TopicAtIndexAsAddressHex(idx int) (string, bool) {
+	if idx < 0 || idx >= len(l.Topics) {
+		return "", false
+	}
+
+	value := l.Topics[idx].Big()
+
+	if value.BitLen() > 8*ethcommon.AddressLength {
+		return "", false
+	}
+
+	return "0x" + value.Text(16), true
 }
