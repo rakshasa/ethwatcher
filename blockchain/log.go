@@ -30,6 +30,18 @@ func (l *Log) AddressAsBig() *big.Int {
 	return new(big.Int).SetBytes(l.Address.Bytes())
 }
 
+func (l *Log) DataLen() int {
+	return len(l.Data) / 32
+}
+
+func (l *Log) DataAtIndexAsBig(idx int) (*big.Int, bool) {
+	if idx < 0 || idx >= len(l.Data)/32 {
+		return nil, false
+	}
+
+	return new(big.Int).SetBytes(l.Data[idx*32 : (idx+1)*32]), true
+}
+
 func (l *Log) TopicsAsBig() []big.Int {
 	results := make([]big.Int, len(l.Topics))
 

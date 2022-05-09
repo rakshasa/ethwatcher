@@ -100,14 +100,26 @@ func TestClient(t *testing.T) {
 					"0x000000000000000000000000ee139899eadfbc5c25c7a1c6786d0367c82f7a1e",
 					"0x0000000000000000000000000bf46ba06dc1d33c3bd80ff42497ebff13a88900",
 				), v[0].TopicsAsBig())
+			assert.Equal(1, v[0].DataLen())
 
-			assert.Equal(newBig("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"), v[0].AddressAsBig())
+			v0Data0, ok := v[0].DataAtIndexAsBig(0)
+			if assert.True(ok) {
+				assert.Equal(*newBig("0x1b7f211b33c7c200"), *v0Data0)
+			}
+
+			assert.Equal(newBig("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"), v[1].AddressAsBig())
 			assert.Equal(
 				newBigList(
 					"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
 					"0x0000000000000000000000008032eaede5c55f744387ca53aaf0499abcd783e5",
 					"0x000000000000000000000000a5e9c917b4b821e4e0a5bbefce078ab6540d6b5e",
 				), v[1].TopicsAsBig())
+			assert.Equal(1, v[1].DataLen())
+
+			v1Data0, ok := v[1].DataAtIndexAsBig(0)
+			if assert.True(ok) {
+				assert.Equal(*newBig("0x14d1120d7b160000"), *v1Data0)
+			}
 		},
 	}
 
