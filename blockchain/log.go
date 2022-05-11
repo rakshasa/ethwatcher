@@ -12,10 +12,20 @@ import (
 
 type Log struct {
 	ethtypes.Log
+	topics []Topic
 }
 
 func NewLog(log *ethtypes.Log) *Log {
-	return &Log{*log}
+	topics := make([]Topic, len(log.Topics))
+
+	for idx, topic := range log.Topics {
+		topics[idx] = Topic{topic}
+	}
+
+	return &Log{
+		Log:    *log,
+		topics: topics,
+	}
 }
 
 func NewTopicFromHex(str string) (ethcommon.Hash, error) {
@@ -32,7 +42,7 @@ func (l *Log) AddressAsBig() *big.Int {
 }
 
 func (l *Log) AddressAsHex() string {
-	return fmt.Sprintf("0x%020x", new(big.Int).SetBytes(l.Address.Bytes()))
+	return fmt.Sprintf("0x%040x", new(big.Int).SetBytes(l.Address.Bytes()))
 }
 
 // TODO: Change to use a custom type for data.
@@ -61,48 +71,16 @@ func (l *Log) DataAtIndexAsUint64(idx int) (uint64, bool) {
 	return value.Uint64(), true
 }
 
-func (l *Log) TopicsAsBig() []big.Int {
-	results := make([]big.Int, len(l.Topics))
+func (l *Log) Topics() []Topic {
+	return l.topics
+}
 
-	for idx, t := range l.Topics {
-		results[idx] = *t.Big()
+func (l *Log) TopicsAsBig() []big.Int {
+	results := make([]big.Int, len(l.topics))
+
+	for idx, topic := range l.topics {
+		results[idx] = *topic.Big()
 	}
 
 	return results
-}
-
-func (l *Log) TopicAtIndexAsAddressHex(idx int) (string, bool) {
-	if idx < 0 || idx >= len(l.Topics) {
-		return "", false
-	}
-
-	value := l.Topics[idx].Big()
-
-	if value.BitLen() > 8*ethcommon.AddressLength {
-		return "", false
-	}
-
-	return fmt.Sprintf("0x%020x", l.Topics[idx].Big()), true
-}
-
-func (l *Log) TopicAtIndexAsHex(idx int) (string, bool) {
-	if idx < 0 || idx >= len(l.Topics) {
-		return "", false
-	}
-
-	return fmt.Sprintf("0x%032x", l.Topics[idx].Big()), true
-}
-
-func (l *Log) TopicAtIndexAsUint64(idx int) (uint64, bool) {
-	if idx < 0 || idx >= len(l.Topics) {
-		return uint64(0), false
-	}
-
-	value := l.Topics[idx].Big()
-
-	if value.IsUint64() {
-		return uint64(0), false
-	}
-
-	return value.Uint64(), true
 }
