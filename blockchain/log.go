@@ -37,6 +37,7 @@ func NewTopicFromHex(str string) (ethcommon.Hash, error) {
 	return ethcommon.BigToHash(value), nil
 }
 
+// TODO: Rename.
 func (l *Log) AddressAsBig() *big.Int {
 	return new(big.Int).SetBytes(l.Address.Bytes())
 }

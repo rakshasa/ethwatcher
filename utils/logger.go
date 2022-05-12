@@ -11,7 +11,7 @@ import (
 
 var (
 	logLevel  = logrus.DebugLevel
-	logPrefix = "ethereumWatcher: "
+	logPrefix = "ethereum-watcher: "
 )
 
 func init() {
@@ -33,6 +33,10 @@ func init() {
 
 func SetCategoryLogLevel(l logrus.Level) {
 	logLevel = l
+}
+
+func SetCategoryLogPrefix(str string) {
+	logPrefix = str
 }
 
 func Printf(format string, v ...interface{}) {

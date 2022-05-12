@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/rakshasa/ethwatcher"
 	"github.com/rakshasa/ethwatcher/blockchain"
-	"github.com/rakshasa/ethwatcher/plugin"
 	"github.com/rakshasa/ethwatcher/utils"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +19,6 @@ var eventSigs []string
 var blockBackoff int
 
 func main() {
-	rootCMD.AddCommand(blockNumCMD)
 	rootCMD.AddCommand(usdtTransferCMD)
 
 	contractEventListenerCMD.Flags().StringVarP(&contractAdx, "contract", "c", "", "contract address listen to")
@@ -41,36 +37,6 @@ func main() {
 var rootCMD = &cobra.Command{
 	Use:   "ethwatcher",
 	Short: "ethwatcher makes getting updates from Ethereum easier",
-}
-
-var blockNumCMD = &cobra.Command{
-	Use:   "new-block-number",
-	Short: "Print number of new block",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithCancel(cmd.Context())
-
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-
-		w := ethwatcher.NewHttpBasedEthWatcher(api)
-
-		utils.Printf("waiting for new block...")
-		w.RegisterBlockPlugin(plugin.NewBlockNumPlugin(func(i uint64, b bool) {
-			utils.Printf(">> found new block: %d, is removed: %t", i, b)
-		}))
-
-		go func() {
-			<-c
-			cancel()
-		}()
-
-		if err := w.RunTillExit(ctx); err != nil {
-			utils.Printf("exit with err: %s", err)
-			return
-		}
-
-		utils.Infof("exit")
-	},
 }
 
 var usdtTransferCMD = &cobra.Command{
