@@ -135,6 +135,7 @@ func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNu
 		utils.Debugf("polling eth receipt log changes...")
 
 		prevTime := time.Now()
+		skipDelay := false
 
 		var logs []blockchain.Log
 
@@ -156,6 +157,7 @@ func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNu
 			if nextBlockNum > prevBlockNum {
 				if nextBlockNum-prevBlockNum > uint64(w.config.blockStepSize) {
 					nextBlockNum = prevBlockNum + uint64(w.config.blockStepSize)
+					skipDelay = true
 				}
 
 				logs, err = rpc.FilterLogs(ctx, prevBlockNum+1, nextBlockNum, w.contractAddresses, w.interestedTopics)
@@ -178,12 +180,13 @@ func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNu
 		} else {
 			prevBlockNum = nextBlockNum
 
-			if nextBlockNum < lastBlockNum {
-				continue
-			}
 			if nextBlockNum >= lastBlockNum {
 				return nil
 			}
+		}
+
+		if skipDelay {
+			continue
 		}
 
 		select {
