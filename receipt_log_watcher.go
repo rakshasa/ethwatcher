@@ -3,6 +3,7 @@ package ethwatcher
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/rakshasa/ethwatcher/blockchain"
@@ -80,6 +81,29 @@ func (w *ReceiptLogWatcher) SetFilter(contractAddresses []string, interestedTopi
 }
 
 func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
+	rpc, err := rpc.DialContextWithRetry(ctx, w.api, uint(w.config.rpcMaxRetries))
+	if err != nil {
+		return fmt.Errorf("failed to dial ethereum rpc node: %v", err)
+	}
+
+	prevBlockNum, err := rpc.BlockNumber(ctx)
+	if err != nil {
+		return err
+	}
+
+	return w.run(ctx, rpc, prevBlockNum, math.MaxUint64)
+}
+
+func (w *ReceiptLogWatcher) RunBetweenBlockNumbers(ctx context.Context, prevBlockNum, lastBlockNum uint64) error {
+	rpc, err := rpc.DialContextWithRetry(ctx, w.api, uint(w.config.rpcMaxRetries))
+	if err != nil {
+		return fmt.Errorf("failed to dial ethereum rpc node: %v", err)
+	}
+
+	return w.run(ctx, rpc, prevBlockNum, lastBlockNum)
+}
+
+func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNum, lastBlockNum uint64) error {
 	// TODO: These checks should be done during initialization.
 	if w.config.blockStepSize > MaxBlockStepSize {
 		return fmt.Errorf("invalid BlockStepSize value")
@@ -91,21 +115,13 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 		return fmt.Errorf("invalid RPCMaxRetries value")
 	}
 
-	rpc, err := rpc.DialContextWithRetry(ctx, w.api, uint(w.config.rpcMaxRetries))
-	if err != nil {
-		return fmt.Errorf("failed to dial ethereum rpc node: %v", err)
-	}
-
+	var err error
 	var filterId string
-	var prevBlockNum, nextBlockNum uint64
+	var nextBlockNum uint64
 
 	if w.config.useFilter {
 		if filterId, err = rpc.NewFilter(w.contractAddresses, w.interestedTopics); err != nil {
 			return fmt.Errorf("failed to request new filter from api: %v", err)
-		}
-	} else {
-		if prevBlockNum, err = rpc.BlockNumber(ctx); err != nil {
-			return err
 		}
 	}
 
@@ -125,6 +141,10 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 			nextBlockNum, err = rpc.BlockNumber(ctx)
 			if err != nil {
 				return err
+			}
+
+			if nextBlockNum > lastBlockNum {
+				nextBlockNum = lastBlockNum
 			}
 
 			if nextBlockNum > prevBlockNum {
@@ -151,6 +171,10 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 		if w.config.useFilter {
 		} else {
 			prevBlockNum = nextBlockNum
+
+			if nextBlockNum >= lastBlockNum {
+				return nil
+			}
 		}
 
 		select {
