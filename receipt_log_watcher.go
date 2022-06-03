@@ -94,13 +94,17 @@ func (w *ReceiptLogWatcher) Run(ctx context.Context) error {
 	return w.run(ctx, rpc, prevBlockNum, math.MaxUint64)
 }
 
-func (w *ReceiptLogWatcher) RunBetweenBlockNumbers(ctx context.Context, prevBlockNum, lastBlockNum uint64) error {
+func (w *ReceiptLogWatcher) RunBetweenBlockNumbers(ctx context.Context, firstBlockNum, lastBlockNum uint64) error {
 	rpc, err := rpc.DialContextWithRetry(ctx, w.api, uint(w.config.rpcMaxRetries))
 	if err != nil {
 		return fmt.Errorf("failed to dial ethereum rpc node: %v", err)
 	}
 
-	return w.run(ctx, rpc, prevBlockNum, lastBlockNum)
+	if firstBlockNum > 1 {
+		firstBlockNum--
+	}
+
+	return w.run(ctx, rpc, firstBlockNum, lastBlockNum)
 }
 
 func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNum, lastBlockNum uint64) error {
