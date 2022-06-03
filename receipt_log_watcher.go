@@ -104,6 +104,8 @@ func (w *ReceiptLogWatcher) RunBetweenBlockNumbers(ctx context.Context, firstBlo
 		firstBlockNum--
 	}
 
+	w.config.blockStepSize = MaxBlockStepSize
+
 	return w.run(ctx, rpc, firstBlockNum, lastBlockNum)
 }
 
