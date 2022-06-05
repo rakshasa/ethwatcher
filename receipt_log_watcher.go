@@ -178,7 +178,7 @@ func (w *ReceiptLogWatcher) run(ctx context.Context, rpc rpc.Client, prevBlockNu
 
 		if w.config.useFilter {
 		} else {
-			prevBlockNum = nextBlockNum
+			prevBlockNum = nextBlockNum - 1
 
 			if nextBlockNum >= lastBlockNum {
 				return nil
